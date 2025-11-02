@@ -1,13 +1,39 @@
 // ARQUIVO: image.js
-// (Responsavel por toda a geracao de imagem com Jimp)
+// (Versao final com fontes customizadas e logo na esquerda)
 
 const Jimp = require('jimp');
 const path = require('path');
-// Importamos a funcao de traducao
 const { traduzirTemporada } = require('./utils.js');
+
+// Variaveis globais para carregar as fontes SÓ UMA VEZ
+// Isso deixa o bot muito mais rapido
+let fontTitulo, fontInfo;
+
+async function carregarFontes() {
+  if (fontTitulo && fontInfo) {
+    return; // Se ja carregou, nao faz de novo
+  }
+  try {
+    console.log('Carregando fontes personalizadas...');
+    // Carrega as fontes que voce upou na pasta /fonts/
+    fontTitulo = await Jimp.loadFont(path.join(__dirname, 'fonts', 'boogaloo_40.fnt'));
+    fontInfo = await Jimp.loadFont(path.join(__dirname, 'fonts', 'roboto_27.fnt'));
+    console.log('Fontes carregadas com sucesso.');
+  } catch (err) {
+    console.error('ERRO CRITICO AO CARREGAR FONTES:', err);
+    console.log('Usando fontes padrao como fallback...');
+    // Se falhar, usa as fontes antigas
+    fontTitulo = await Jimp.loadFont(Jimp.FONT_SANS_64_WHITE);
+    fontInfo = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE);
+  }
+}
+
 
 async function gerarCapa(anime) {
   try {
+    // Garante que as fontes estao carregadas antes de desenhar
+    await carregarFontes();
+    
     const largura = 1280;
     const altura = 720;
     const padding = 40;
@@ -31,25 +57,27 @@ async function gerarCapa(anime) {
       image.composite(cover, largura - cover.bitmap.width - padding, padding);
     }
     
-    // (Ainda estamos usando as fontes padrao, vamos mudar isso em breve)
-    const fontTitulo = await Jimp.loadFont(Jimp.FONT_SANS_64_WHITE);
-    const fontInfo = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE);
-    const fontTag = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE);
+    // *** MUDANCA: Usando as fontes carregadas ***
+    // (Nao usamos mais a fontTag, usamos a fontInfo (Roboto 27) para as tags)
     
     let currentTextY = padding;
     const temporada = traduzirTemporada(anime.season);
     const episodios = anime.episodes || '??';
+    
+    // Info Topo (Roboto 27)
     const infoTopo = `${temporada} ${anime.seasonYear} - ${episodios} EPISODIOS`;
     image.print(fontInfo, padding, currentTextY, infoTopo, textoAreaLargura);
     currentTextY += Jimp.measureTextHeight(fontInfo, infoTopo, textoAreaLargura) + 10;
     
+    // Titulo (Boogaloo 40)
     const titulo = anime.title.romaji || anime.title.english || "Titulo Desconhecido";
     image.print(fontTitulo, padding, currentTextY, titulo, textoAreaLargura);
     currentTextY += Jimp.measureTextHeight(fontTitulo, titulo, textoAreaLargura) + 20;
     
+    // Estudio (Boogaloo 40)
     const estudio = anime.studios.nodes.length > 0 ? anime.studios.nodes[0].name : 'Estudio desconhecido';
-    image.print(fontInfo, padding, currentTextY, `Estudio: ${estudio}`, textoAreaLargura);
-    currentTextY += Jimp.measureTextHeight(fontInfo, `Estudio: ${estudio}`, textoAreaLargura) + 20;
+    image.print(fontTitulo, padding, currentTextY, `Estudio: ${estudio}`, textoAreaLargura);
+    currentTextY += Jimp.measureTextHeight(fontTitulo, `Estudio: ${estudio}`, textoAreaLargura) + 20;
     
     let currentTagX = padding;
     let currentTagY = currentTextY;
@@ -60,54 +88,32 @@ async function gerarCapa(anime) {
     
     for (const genero of generos.slice(0, 4)) {
       const genreText = genero.toUpperCase();
-      const textWidth = Jimp.measureText(fontTag, genreText);
+      // Mede com a fontInfo (Roboto 27)
+      const textWidth = Jimp.measureText(fontInfo, genreText);
       const tagWidth = textWidth + (tagPaddingHorizontal * 2);
+
       if (currentTagX + tagWidth > textoAreaLargura + padding) {
         currentTagX = padding;
         currentTagY += tagHeight + 10;
       }
+      
       const tagBg = new Jimp(tagWidth, tagHeight, '#FFA500');
       image.composite(tagBg, currentTagX, currentTagY);
-      image.print(fontTag, currentTagX + tagPaddingHorizontal, currentTagY + tagPaddingVertical, genreText);
+      // Escreve com a fontInfo (Roboto 27)
+      image.print(fontInfo, currentTagX + tagPaddingHorizontal, currentTagY + 2, genreText); // Ajuste Y
       currentTagX += tagWidth + 10;
     }
     
-    // --- *** NOVO BLOCO DE WATERMARK COM LOGO *** ---
+    // --- WATERMARK NA ESQUERDA (COMO A REFERENCIA) ---
     try {
         const logoPath = path.join(__dirname, 'logo', 'logo1.jpg');
         const logo = await Jimp.read(logoPath);
         const watermarkText = '@AnimesUDK';
-        const watermarkFont = fontInfo; // Usa a mesma fonte da Info
-        const logoHeight = 40; // Define a altura da logo
+        const watermarkFont = fontInfo; // Usa Roboto 27
+        const logoHeight = 40;
         
-        logo.resize(Jimp.AUTO, logoHeight); // Redimensiona a logo
+        logo.resize(Jimp.AUTO, logoHeight);
         
+        // POSICAO ESQUERDA
         const logoX = padding;
-        const logoY = altura - padding - logoHeight; // Alinha pela base
-        
-        const textHeight = Jimp.measureTextHeight(watermarkFont, watermarkText, 1000);
-        const textX = logoX + logo.bitmap.width + 10; // 10px de espaco
-        const textY = altura - padding - textHeight; // Alinha pela base
-        
-        image.composite(logo, logoX, logoY); // Cola a logo
-        image.print(watermarkFont, textX, textY, watermarkText); // Escreve o texto
-
-    } catch (err) {
-        console.warn(`Aviso: Nao foi possivel carregar a logo/logo1.jpg.`, err.message);
-        // Fallback: se a logo falhar, escreve so o texto
-        const fallbackText = '@AnimesUDK';
-        image.print(fontInfo, padding, altura - padding - Jimp.measureTextHeight(fontInfo, fallbackText, 1000), fallbackText);
-    }
-    // --- *** FIM DO NOVO BLOCO *** ---
-    
-    
-    const buffer = await image.getBufferAsync(Jimp.MIME_PNG);
-    return { success: true, buffer: buffer };
-    
-  } catch (err) {
-    console.error('ERRO GERAL AO GERAR IMAGEM:', err);
-    return { success: false, error: err.message };
-  }
-}
-
-module.exports = { gerarCapa };
+        const logoY = altura - padding - logoHeight;
