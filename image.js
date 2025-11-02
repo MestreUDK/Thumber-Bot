@@ -58,7 +58,6 @@ async function gerarCapa(anime) {
     }
     
     // *** MUDANCA: Usando as fontes carregadas ***
-    // (Nao usamos mais a fontTag, usamos a fontInfo (Roboto 27) para as tags)
     
     let currentTextY = padding;
     const temporada = traduzirTemporada(anime.season);
@@ -117,3 +116,29 @@ async function gerarCapa(anime) {
         // POSICAO ESQUERDA
         const logoX = padding;
         const logoY = altura - padding - logoHeight;
+        
+        const textHeight = Jimp.measureTextHeight(watermarkFont, watermarkText, 1000);
+        const textX = logoX + logo.bitmap.width + 10;
+        const textY = altura - padding - textHeight;
+        
+        image.composite(logo, logoX, logoY);
+        image.print(watermarkFont, textX, textY, watermarkText);
+
+    } catch (err) {
+        console.warn(`Aviso: Nao foi possivel carregar a logo/logo1.jpg.`, err.message);
+        const fallbackText = '@AnimesUDK';
+        image.print(fontInfo, padding, altura - padding - Jimp.measureTextHeight(fontInfo, fallbackText, 1000), fallbackText);
+    }
+    
+    
+    const buffer = await image.getBufferAsync(Jimp.MIME_PNG);
+    return { success: true, buffer: buffer };
+    
+  } catch (err) {
+    console.error('ERRO GERAL AO GERAR IMAGEM:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+// Exporta as funcoes
+module.exports = { gerarCapa, carregarFontes };
