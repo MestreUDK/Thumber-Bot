@@ -1,23 +1,26 @@
 // ARQUIVO: image.js
-// (Versao final com fontes customizadas e logo na esquerda)
+// (Atualizado para usar as 3 fontes: Boogaloo 40, Roboto 27, Roboto 25)
 
 const Jimp = require('jimp');
 const path = require('path');
 const { traduzirTemporada } = require('./utils.js');
 
-// Variaveis globais para carregar as fontes SÓ UMA VEZ
-// Isso deixa o bot muito mais rapido
-let fontTitulo, fontInfo;
+// Variaveis globais para as fontes
+let fontTitulo, fontInfo, fontTag;
 
 async function carregarFontes() {
-  if (fontTitulo && fontInfo) {
-    return; // Se ja carregou, nao faz de novo
+  // Se ja carregou, nao faz de novo
+  if (fontTitulo && fontInfo && fontTag) {
+    return;
   }
   try {
-    console.log('Carregando fontes personalizadas...');
+    console.log('Carregando fontes personalizadas (3 fontes)...');
+    
     // Carrega as fontes que voce upou na pasta /fonts/
     fontTitulo = await Jimp.loadFont(path.join(__dirname, 'fonts', 'boogaloo_40.fnt'));
     fontInfo = await Jimp.loadFont(path.join(__dirname, 'fonts', 'roboto_27.fnt'));
+    fontTag = await Jimp.loadFont(path.join(__dirname, 'fonts', 'roboto_25.fnt'));
+    
     console.log('Fontes carregadas com sucesso.');
   } catch (err) {
     console.error('ERRO CRITICO AO CARREGAR FONTES:', err);
@@ -25,6 +28,7 @@ async function carregarFontes() {
     // Se falhar, usa as fontes antigas
     fontTitulo = await Jimp.loadFont(Jimp.FONT_SANS_64_WHITE);
     fontInfo = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE);
+    fontTag = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE); // Fallback para a tag
   }
 }
 
@@ -57,7 +61,7 @@ async function gerarCapa(anime) {
       image.composite(cover, largura - cover.bitmap.width - padding, padding);
     }
     
-    // *** MUDANCA: Usando as fontes carregadas ***
+    // *** MUDANCA: Usando as 3 fontes corretas ***
     
     let currentTextY = padding;
     const temporada = traduzirTemporada(anime.season);
@@ -87,8 +91,8 @@ async function gerarCapa(anime) {
     
     for (const genero of generos.slice(0, 4)) {
       const genreText = genero.toUpperCase();
-      // Mede com a fontInfo (Roboto 27)
-      const textWidth = Jimp.measureText(fontInfo, genreText);
+      // Mede com a fontTag (Roboto 25)
+      const textWidth = Jimp.measureText(fontTag, genreText);
       const tagWidth = textWidth + (tagPaddingHorizontal * 2);
 
       if (currentTagX + tagWidth > textoAreaLargura + padding) {
@@ -98,8 +102,8 @@ async function gerarCapa(anime) {
       
       const tagBg = new Jimp(tagWidth, tagHeight, '#FFA500');
       image.composite(tagBg, currentTagX, currentTagY);
-      // Escreve com a fontInfo (Roboto 27)
-      image.print(fontInfo, currentTagX + tagPaddingHorizontal, currentTagY + 2, genreText); // Ajuste Y
+      // Escreve com a fontTag (Roboto 25)
+      image.print(fontTag, currentTagX + tagPaddingHorizontal, currentTagY + 2, genreText); // Ajuste Y
       currentTagX += tagWidth + 10;
     }
     
