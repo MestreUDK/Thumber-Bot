@@ -19,6 +19,5 @@ query ($search: String) {
       large
     }
     bannerImage
-    ageRating
   }
 }
