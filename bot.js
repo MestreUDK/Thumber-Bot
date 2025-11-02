@@ -1,6 +1,7 @@
-require('dotenv').config(); // Carrega o .env
+require('dotenv').config();
 const { Telegraf } = require('telegraf');
-const axios = require('axios'); // Importamos o axios
+const axios = require('axios');
+const Jimp = require('jimp'); // Importamos a biblioteca de imagem
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
@@ -11,10 +12,8 @@ if (!BOT_TOKEN) {
 
 const bot = new Telegraf(BOT_TOKEN);
 
-// --- FUNÇÃO DA API ANILIST ---
-// Esta função faz a busca na API
+// --- Função da API ANILIST (continua igual) ---
 async function buscarAnime(nome) {
-  // Esta é a "pergunta" em GraphQL que fazemos para a API
   const query = `
     query ($search: String) {
       Media (search: $search, type: ANIME) {
@@ -40,24 +39,17 @@ async function buscarAnime(nome) {
       }
     }
   `;
-
-  // Aqui definimos o nome que estamos buscando
   const variables = {
     search: nome
   };
 
   try {
-    // Fazemos a requisição (POST) para a API do AniList
     const response = await axios.post('https://graphql.anilist.co', {
       query: query,
       variables: variables
     });
-
-    // Se der certo, retornamos os dados do anime
     return response.data.data.Media;
-    
   } catch (error) {
-    // Se der erro (ex: anime não encontrado)
     console.error('Erro ao buscar no AniList:', error.message);
     return null;
   }
@@ -69,8 +61,7 @@ bot.start((ctx) => {
   ctx.reply('Olá! Eu sou o bot gerador de capas.\n\nEnvie /capa [nome do anime] para começar.');
 });
 
-// --- COMANDO /CAPA ATUALIZADO ---
-// Usamos "async" para poder esperar a API responder
+// --- COMANDO /CAPA ATUALIZADO PARA GERAR IMAGEM ---
 bot.command('capa', async (ctx) => {
   const nomeDoAnime = ctx.message.text.replace('/capa', '').trim();
 
@@ -78,39 +69,44 @@ bot.command('capa', async (ctx) => {
     return ctx.reply('Por favor, me diga o nome do anime. Ex: /capa To Your Eternity');
   }
 
-  // Avisa ao usuário que estamos trabalhando
-  ctx.reply(`Buscando dados para: ${nomeDoAnime}... 🔎`);
+  // Mudamos a mensagem para incluir "Gerando imagem"
+  ctx.reply(`Buscando dados e gerando capa para: ${nomeDoAnime}... 🎨`);
 
-  // Chama nossa nova função e espera a resposta
   const anime = await buscarAnime(nomeDoAnime);
 
-  // Se o anime não for encontrado
   if (!anime) {
     return ctx.reply(`Desculpe, não consegui encontrar o anime "${nomeDoAnime}".`);
   }
-  
-  // --- A MÁGICA ACONTECEU ---
-  // Por enquanto, vamos só responder com os dados que encontramos
 
-  // Pegamos o nome do primeiro estúdio
-  const estudio = anime.studios.nodes.length > 0 ? anime.studios.nodes[0].name : 'Estúdio desconhecido';
+  // --- HORA DE DESENHAR (TESTE SIMPLES) ---
+  try {
+    // 1. Cria uma tela preta (largura: 800, altura: 400)
+    const image = new Jimp(800, 400, '#000000');
 
-  // Criamos uma resposta de texto simples
-  const resposta = `
-Anime: ${anime.title.romaji}
-Temporada: ${anime.season} ${anime.seasonYear}
-Episódios: ${anime.episodes}
-Estúdio: ${estudio}
-Gêneros: ${anime.genres.join(', ')}
+    // 2. Carrega uma fonte branca (Jimp tem algumas fontes padrão)
+    const font = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE);
 
-(Próximo passo: gerar a imagem!)
-  `;
+    // 3. Escreve na imagem (fonte, x, y, texto)
+    image.print(font, 20, 20, `Anime: ${anime.title.romaji}`);
+    
+    // Pega o nome do estúdio
+    const estudio = anime.studios.nodes.length > 0 ? anime.studios.nodes[0].name : 'Estúdio desconhecido';
+    image.print(font, 20, 60, `Estúdio: ${estudio}`);
 
-  // Enviamos a resposta
-  // (replyWithPhoto é o próximo passo, por enquanto usamos reply)
-  return ctx.reply(resposta);
+    // 4. Converte a imagem para um formato que o Telegram entende
+    const buffer = await image.getBufferAsync(Jimp.MIME_PNG);
+
+    // 5. Envia a IMAGEM!
+    //    Usamos "source" para enviar o "buffer" (a imagem em memória)
+    return ctx.replyWithPhoto({ source: buffer });
+
+  } catch (err) {
+    console.error('Erro ao gerar a imagem:', err);
+    return ctx.reply('Desculpe, tive um problema ao tentar desenhar a capa.');
+  }
+  // --- FIM DO CÓDIGO DE DESENHO ---
 });
 
 
 bot.launch();
-console.log('Bot iniciado e rodando na nuvem (com API)...');
+console.log('Bot iniciado e rodando na nuvem (com Jimp)...');
