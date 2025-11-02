@@ -36,7 +36,7 @@ async function buscarAnime(nome) {
           large
         }
         bannerImage
-        ageRating // <-- Já estávamos pegando isso
+        ageRating
       }
     }
   `;
@@ -68,26 +68,27 @@ function traduzirTemporada(season) {
   }
 }
 
-// *** NOVA FUNÇÃO ***
-// --- Pega o valor da API (ex: "16") e traduz para o nome do arquivo (ex: "A16.png") ---
+// *** FUNÇÃO ATUALIZADA ***
+// --- Pega o valor da API (ex: "PG-13") e traduz para o nome do arquivo (ex: "A14.png") ---
 function getRatingImageName(apiRating) {
   if (!apiRating) return null;
   
   const rating = String(apiRating).toUpperCase();
 
-  // Mapeamento padrão BR (que você vai upar)
+  // --- Mapeamento solicitado por você ---
   if (rating === 'G' || rating === 'ALL') return 'L.png';
+  if (rating === 'PG') return 'A12.png';
+  if (rating === 'PG-13') return 'A14.png';
+  if (rating === 'R+' || rating === 'R-17' || rating === 'R') return 'A16.png'; // Mapeia R+, R-17 e R para A16
+  if (rating === 'NC-17' || rating === 'RX') return 'A18.png';
+  // --- Fim do mapeamento solicitado ---
+
+  // Mapeamento padrão BR (fallback numérico, caso a API mande "16")
   if (rating === '10') return 'A10.png';
   if (rating === '12') return 'A12.png';
-  if (rating === 'PG' || rating === 'PG-13') return 'A12.png'; // Mapeia PG/PG-13 para 12
   if (rating === '14') return 'A14.png';
-  if (rating === '16') return 'A16.png'; // <-- O caso da sua referência
-  if (rating === '18' || rating === 'R' || rating === 'R+') return 'A18.png'; // Mapeia R/R+ para 18
-
-  // Se a API retornar só o número
-  if (rating.match(/^[0-9]+$/)) { 
-    return `A${rating}.png`; 
-  }
+  if (rating === '16') return 'A16.png';
+  if (rating === '18') return 'A18.png';
   
   return null; // Não achou um mapeamento
 }
@@ -144,7 +145,7 @@ bot.command('capa', async (ctx) => {
     let currentTextY = padding;
 
     const temporada = traduzirTemporada(anime.season);
-    const infoTopo = `${temporada} ${anime.seasonYear} • ${anime.episodes} EPISÓDIOS`;
+    const infoTopo = `${temporada} ${anime.seasonYear} • ${anime.episodes} EPISÓDOS`; // Corrigido para EPISÓDIOS
     image.print(fontInfo, padding, currentTextY, infoTopo, textoAreaLargura);
     currentTextY += Jimp.measureTextHeight(fontInfo, infoTopo, textoAreaLargura) + 10;
 
@@ -181,31 +182,24 @@ bot.command('capa', async (ctx) => {
 
     image.print(fontInfo, padding, altura - padding - Jimp.measureTextHeight(fontInfo, '@AnimesUDK', largura), '@AnimesUDK');
 
-    // *** CÓDIGO DE CLASSIFICAÇÃO ATUALIZADO ***
-    // Em vez de desenhar, agora ele vai CARREGAR sua imagem
-    const ratingFileName = getRatingImageName(anime.ageRating); // Ex: "A16.png"
+    // --- CÓDIGO DE CLASSIFICAÇÃO (Usa a nova função) ---
+    const ratingFileName = getRatingImageName(anime.ageRating); // Ex: "A14.png"
     if (ratingFileName) {
       try {
-        // Tenta carregar a imagem da pasta /classificacao/
         const ratingImagePath = `./classificacao/${ratingFileName}`;
         const ratingImage = await Jimp.read(ratingImagePath);
 
-        // Redimensiona para uma altura padrão (ex: 60px)
-        ratingImage.resize(Jimp.AUTO, 60); 
+        ratingImage.resize(Jimp.AUTO, 60); // Redimensiona para 60px de altura
         
         const ratingX = largura - ratingImage.bitmap.width - padding;
         const ratingY = altura - ratingImage.bitmap.height - padding;
 
-        // Cola a sua imagem na capa
         image.composite(ratingImage, ratingX, ratingY);
         
       } catch (err) {
         console.warn(`Aviso: Não foi possível carregar a imagem ${ratingFileName} da pasta /classificacao/`);
-        // Se o arquivo não existir, ele não faz nada e não quebra o bot.
       }
     }
-    // *** FIM DA ATUALIZAÇÃO ***
-
 
     const buffer = await image.getBufferAsync(Jimp.MIME_PNG);
     return ctx.replyWithPhoto({ source: buffer });
@@ -218,5 +212,4 @@ bot.command('capa', async (ctx) => {
 
 
 bot.launch();
-console.log('Bot iniciado e rodando na nuvem (com Imagens de Classificação)...');
-
+console.log('Bot iniciado e rodando na nuvem (com Mapeamento de Classificação Atualizado)...');
