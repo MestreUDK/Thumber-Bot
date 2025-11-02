@@ -45,12 +45,13 @@ function registerEvents(bot) {
       ctx.session.awaitingInput = acao; 
       
       let pergunta = 'O que voce quer colocar?';
-      if (acao === 'edit_title') pergunta = 'Digite o novo **Titulo** (ex: Fumetsu no Anata e (3a TEMP))';
-      if (acao === 'edit_studio') pergunta = 'Digite o novo **Estudio** (ex: Drive | Studio Massket)';
-      if (acao === 'edit_tags') pergunta = 'Digite as novas **Tags** (separadas por virgula, ex: Aventura, Shounen, Drama)';
-      if (acao === 'edit_rating') pergunta = 'Digite a **Classificacao** (ex: 16, 18, L)';
+      if (acao === 'edit_title') pergunta = 'Digite o novo Titulo (ex: Fumetsu no Anata e (3a TEMP))';
+      if (acao === 'edit_studio') pergunta = 'Digite o novo Estudio (ex: Drive | Studio Massket)';
+      if (acao === 'edit_tags') pergunta = 'Digite as novas Tags (separadas por virgula, ex: Aventura, Shounen, Drama)';
+      if (acao === 'edit_rating') pergunta = 'Digite a Classificacao (ex: 16, 18, L)';
       
-      await ctx.replyWithHTML(pergunta);
+      // --- MUDANCA: Trocado de replyWithHTML para .reply() ---
+      await ctx.reply(pergunta);
     } catch (err) {
       console.error('ERRO NO BOTAO EDITAR:', err);
     }
