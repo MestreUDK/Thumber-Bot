@@ -1,0 +1,24 @@
+query ($search: String) {
+  Media (search: $search, type: ANIME) {
+    title {
+      romaji
+      english
+    }
+    season
+    seasonYear
+    episodes
+    studios(isMain: true) {
+      nodes {
+        name
+      }
+    }
+    genres
+    averageScore
+    format
+    coverImage {
+      large
+    }
+    bannerImage
+    ageRating
+  }
+}
