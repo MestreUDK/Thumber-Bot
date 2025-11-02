@@ -1,8 +1,9 @@
 // ARQUIVO: src/image.js
+// (Versao com watermark e logo DESATIVADOS)
+
 const Jimp = require('jimp');
 const path = require('path');
-// ATUALIZADO: O caminho para utils.js nao muda, pois estao na mesma pasta
-const { traduzirTemporada, getRatingImageName } = require('./utils.js');
+const { traduzirTemporada } = require('./utils.js');
 
 let fontTitulo, fontInfo, fontTag;
 
@@ -12,13 +13,13 @@ async function carregarFontes() {
   }
   try {
     console.log('Carregando fontes personalizadas (3 fontes)...');
-    // ATUALIZADO: Adiciona '..' e 'assets' no caminho
     fontTitulo = await Jimp.loadFont(path.join(__dirname, '..', 'assets', 'fonts', 'boogaloo_40.fnt'));
     fontInfo = await Jimp.loadFont(path.join(__dirname, '..', 'assets', 'fonts', 'roboto_27.fnt'));
     fontTag = await Jimp.loadFont(path.join(__dirname, '..', 'assets', 'fonts', 'roboto_25.fnt'));
     console.log('Fontes carregadas com sucesso.');
   } catch (err) {
     console.error('ERRO CRITICO AO CARREGAR FONTES:', err);
+    console.log('Usando fontes padrao como fallback...');
     fontTitulo = await Jimp.loadFont(Jimp.FONT_SANS_64_WHITE);
     fontInfo = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE);
     fontTag = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE);
@@ -56,6 +57,7 @@ async function gerarCapa(anime) {
     let currentTextY = padding;
     const temporada = traduzirTemporada(anime.season);
     const episodios = anime.episodes || '??';
+    
     const infoTopo = `${temporada} ${anime.seasonYear} - ${episodios} EPISODIOS`;
     image.print(fontInfo, padding, currentTextY, infoTopo, textoAreaLargura);
     currentTextY += Jimp.measureTextHeight(fontInfo, infoTopo, textoAreaLargura) + 10;
@@ -79,44 +81,53 @@ async function gerarCapa(anime) {
       const genreText = genero.toUpperCase();
       const textWidth = Jimp.measureText(fontTag, genreText);
       const tagWidth = textWidth + (tagPaddingHorizontal * 2);
+
       if (currentTagX + tagWidth > textoAreaLargura + padding) {
         currentTagX = padding;
         currentTagY += tagHeight + 10;
       }
+      
       const tagBg = new Jimp(tagWidth, tagHeight, '#FFA500');
       image.composite(tagBg, currentTagX, currentTagY);
       image.print(fontTag, currentTagX + tagPaddingHorizontal, currentTagY + 2, genreText);
       currentTagX += tagWidth + 10;
     }
     
-    // Watermark
+    // --- *** MUDANCA: BLOCO DE WATERMARK DESATIVADO *** ---
+    /* (Este bloco foi desativado temporariamente)
     try {
-        // ATUALIZADO: Adiciona '..' e 'assets' no caminho
         const logoPath = path.join(__dirname, '..', 'assets', 'logo', 'logo1.jpg');
         const logo = await Jimp.read(logoPath);
         const watermarkText = '@AnimesUDK';
         const watermarkFont = fontInfo;
         const logoHeight = 40;
+        
         logo.resize(Jimp.AUTO, logoHeight);
+        
         const logoX = padding;
         const logoY = altura - padding - logoHeight;
+        
         const textHeight = Jimp.measureTextHeight(watermarkFont, watermarkText, 1000);
         const textX = logoX + logo.bitmap.width + 10;
         const textY = altura - padding - textHeight;
+        
         image.composite(logo, logoX, logoY);
         image.print(watermarkFont, textX, textY, watermarkText);
+
     } catch (err) {
         console.warn(`Aviso: Nao foi possivel carregar a logo/logo1.jpg.`, err.message);
         const fallbackText = '@AnimesUDK';
         image.print(fontInfo, padding, altura - padding - Jimp.measureTextHeight(fontInfo, fallbackText, 1000), fallbackText);
     }
+    */
+    // --- *** FIM DO BLOCO DESATIVADO *** ---
+    
     
     // Classificacao
     if (anime.classificacaoManual) { 
       const ratingFileName = getRatingImageName(anime.classificacaoManual);
       if (ratingFileName) {
         try {
-          // ATUALIZADO: Adiciona '..' e 'assets' no caminho
           const ratingImagePath = path.join(__dirname, '..', 'assets', 'classificacao', ratingFileName);
           const ratingImage = await Jimp.read(ratingImagePath);
           ratingImage.resize(Jimp.AUTO, 60);
@@ -138,4 +149,5 @@ async function gerarCapa(anime) {
   }
 }
 
+// Exporta as funcoes
 module.exports = { gerarCapa, carregarFontes };
