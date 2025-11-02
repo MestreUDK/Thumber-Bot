@@ -1,5 +1,5 @@
-// ARQUIVO: utils.js
-// (Adicionando a funcao de classificacao de volta)
+// ARQUIVO: src/utils.js
+// (Versao completa com as duas funcoes)
 
 // --- FUNCAO PARA TRADUZIR (SEM ACENTOS) ---
 function traduzirTemporada(season) {
@@ -13,7 +13,7 @@ function traduzirTemporada(season) {
   }
 }
 
-// --- FUNCAO DE MAPEAMENTO DE CLASSIFICACAO (DE VOLTA!) ---
+// --- FUNCAO DE MAPEAMENTO DE CLASSIFICACAO (NECESSARIA) ---
 // (Usa as regras que voce me passou)
 function getRatingImageName(apiRating) {
   if (!apiRating) return null;
@@ -33,8 +33,8 @@ function getRatingImageName(apiRating) {
   return null;
 }
 
-// Exporta as funcoes
+// Exporta as duas funcoes
 module.exports = {
   traduzirTemporada,
-  getRatingImageName // <-- Adicionamos de volta
+  getRatingImageName
 };
