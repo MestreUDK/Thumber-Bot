@@ -1,8 +1,9 @@
 // ARQUIVO: src/events.js
+// (Atualizado para lidar com edicao de imagens)
+
 const { gerarCapa } = require('./image.js');
 const { enviarConfirmacao } = require('./confirmation.js');
 
-// Funcao principal que registra todos os eventos
 function registerEvents(bot) {
 
   // Botao [Gerar Capa Agora!]
@@ -38,19 +39,20 @@ function registerEvents(bot) {
     await ctx.reply('Geracao cancelada.');
   });
 
-  // Botoes de Edicao (Titulo, Estudio, Tags, Classificacao)
-  bot.action(['edit_title', 'edit_studio', 'edit_tags', 'edit_rating'], async (ctx) => {
+  // --- *** MUDANCA: ADICIONADO 'edit_poster' e 'edit_fundo' *** ---
+  bot.action(['edit_title', 'edit_studio', 'edit_tags', 'edit_rating', 'edit_poster', 'edit_fundo'], async (ctx) => {
     try {
       const acao = ctx.match[0];
       ctx.session.awaitingInput = acao; 
       
       let pergunta = 'O que voce quer colocar?';
-      if (acao === 'edit_title') pergunta = 'Digite o novo Titulo (ex: Fumetsu no Anata e (3a TEMP))';
-      if (acao === 'edit_studio') pergunta = 'Digite o novo Estudio (ex: Drive | Studio Massket)';
-      if (acao === 'edit_tags') pergunta = 'Digite as novas Tags (separadas por virgula, ex: Aventura, Shounen, Drama)';
-      if (acao === 'edit_rating') pergunta = 'Digite a Classificacao (ex: 16, 18, L)';
+      if (acao === 'edit_title') pergunta = 'Digite o novo **Titulo** (ex: Fumetsu no Anata e (3a TEMP))';
+      if (acao === 'edit_studio') pergunta = 'Digite o novo **Estudio** (ex: Drive | Studio Massket)';
+      if (acao === 'edit_tags') pergunta = 'Digite as novas **Tags** (separadas por virgula, ex: Aventura, Shounen, Drama)';
+      if (acao === 'edit_rating') pergunta = 'Digite a **Classificacao** (ex: 16, 18, L)';
+      if (acao === 'edit_poster') pergunta = 'Envie o **link (URL)** da nova imagem do Pôster (a imagem da direita)';
+      if (acao === 'edit_fundo') pergunta = 'Envie o **link (URL)** da nova imagem de Fundo';
       
-      // --- MUDANCA: Trocado de replyWithHTML para .reply() ---
       await ctx.reply(pergunta);
     } catch (err) {
       console.error('ERRO NO BOTAO EDITAR:', err);
@@ -81,6 +83,15 @@ function registerEvents(bot) {
       if (state === 'edit_rating') {
         animeData.classificacaoManual = userInput;
       }
+      // --- *** MUDANCA: Salva os links das imagens *** ---
+      if (state === 'edit_poster') {
+        // (O 'animeData.coverImage' pode nao existir, entao criamos)
+        if (!animeData.coverImage) animeData.coverImage = {};
+        animeData.coverImage.large = userInput;
+      }
+      if (state === 'edit_fundo') {
+        animeData.bannerImage = userInput;
+      }
 
       ctx.session.awaitingInput = null;
       ctx.session.animeData = animeData;
@@ -95,5 +106,4 @@ function registerEvents(bot) {
   });
 }
 
-// Exporta a funcao de registro
 module.exports = { registerEvents };
