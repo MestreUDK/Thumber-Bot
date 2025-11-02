@@ -1,5 +1,5 @@
 // ARQUIVO: src/image.js
-// (Atualizado: Remove "Estudio:" e centraliza a classificacao)
+// (Atualizado: Move a Classificacao para cima da Logo, na esquerda)
 
 const Jimp = require('jimp');
 const path = require('path');
@@ -47,20 +47,11 @@ async function gerarCapa(anime) {
     overlay.opacity(0.6);
     image.composite(overlay, 0, 0);
     
-    // Variaveis para guardar a posicao do poster (para a classificacao)
-    let coverX = 0;
-    let coverY = 0;
-    let coverWidth = 0;
-    let coverHeight = 0;
-
     if (anime.coverImage && anime.coverImage.large) {
       const cover = await Jimp.read(anime.coverImage.large);
-      coverWidth = largura * 0.3;
+      const coverWidth = largura * 0.3;
       cover.resize(coverWidth, Jimp.AUTO); 
-      coverHeight = cover.bitmap.height; // Guarda a altura
-      coverX = largura - cover.bitmap.width - padding;
-      coverY = padding;
-      image.composite(cover, coverX, coverY);
+      image.composite(cover, largura - cover.bitmap.width - padding, padding);
     }
     
     let currentTextY = padding;
@@ -75,9 +66,8 @@ async function gerarCapa(anime) {
     image.print(fontTitulo, padding, currentTextY, titulo, textoAreaLargura);
     currentTextY += Jimp.measureTextHeight(fontTitulo, titulo, textoAreaLargura) + 20;
     
-    // --- *** MUDANCA: REMOVIDO "Estudio: " *** ---
+    // Pega o nome do estudio (sem o "Estudio: ")
     const estudio = anime.studios.nodes.length > 0 ? anime.studios.nodes[0].name : 'Estudio desconhecido';
-    // Agora so printa o nome do estudio, sem o prefixo
     image.print(fontTitulo, padding, currentTextY, estudio, textoAreaLargura); 
     currentTextY += Jimp.measureTextHeight(fontTitulo, estudio, textoAreaLargura) + 20;
     
@@ -104,14 +94,36 @@ async function gerarCapa(anime) {
       currentTagX += tagWidth + 10;
     }
     
-    // Bloco da logo (desativado como voce pediu)
-    /* try {
+    // --- *** BLOCO DA LOGO/WATERMARK (NA ESQUERDA) *** ---
+    // (Este bloco foi desativado em uma msg anterior, mas sua foto gerada mostra ele)
+    // (Se voce quiser desativar, e so apagar este bloco)
+    let logoY = altura - padding; // Define o Y padrao
+    try {
         const logoPath = path.join(__dirname, '..', 'assets', 'logo', 'logo1.jpg');
-        ...
-    } catch (err) { ... }
-    */
+        const logo = await Jimp.read(logoPath);
+        const watermarkText = '@AnimesUDK';
+        const watermarkFont = fontInfo; // Usa Roboto 27
+        const logoHeight = 40;
+        
+        logo.resize(Jimp.AUTO, logoHeight);
+        
+        const logoX = padding;
+        logoY = altura - padding - logoHeight; // Atualiza o Y da logo
+        
+        const textHeight = Jimp.measureTextHeight(watermarkFont, watermarkText, 1000);
+        const textX = logoX + logo.bitmap.width + 10;
+        const textY = altura - padding - textHeight;
+        
+        image.composite(logo, logoX, logoY);
+        image.print(watermarkFont, textX, textY, watermarkText);
+
+    } catch (err) {
+        console.warn(`Aviso: Nao foi possivel carregar a logo/logo1.jpg.`, err.message);
+    }
+    // --- FIM DO BLOCO DA LOGO ---
+
     
-    // --- *** MUDANCA: POSICAO DA CLASSIFICACAO *** ---
+    // --- *** CLASSIFICACAO (POSICAO ATUALIZADA) *** ---
     if (anime.classificacaoManual) { 
       const ratingFileName = getRatingImageName(anime.classificacaoManual);
       if (ratingFileName) {
@@ -120,9 +132,9 @@ async function gerarCapa(anime) {
           const ratingImage = await Jimp.read(ratingImagePath);
           ratingImage.resize(Jimp.AUTO, 60);
           
-          // Centraliza a classificacao ABAIXO do poster
-          const ratingX = (coverX + (coverWidth / 2)) - (ratingImage.bitmap.width / 2);
-          const ratingY = coverY + coverHeight + 10; // 10px abaixo do poster
+          // POSICAO: Alinhado a esquerda (padding), 10px ACIMA da logo
+          const ratingX = padding;
+          const ratingY = logoY - ratingImage.bitmap.height - 10; 
 
           image.composite(ratingImage, ratingX, ratingY);
         } catch (err) {
