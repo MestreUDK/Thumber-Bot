@@ -1,5 +1,5 @@
 // ARQUIVO: src/image.js
-// (CORRIGIDO: Poster volta a ser redimensionado pela LARGURA)
+// (CORRIGIDO: Poster PREENCHE a altura total e alinha na direita)
 
 const Jimp = require('jimp');
 const path = require('path');
@@ -34,33 +34,45 @@ async function gerarCapa(anime) {
     const largura = 1280;
     const altura = 720;
     const padding = 40;
-    const textoAreaLargura = largura * 0.6;
     const image = new Jimp(largura, altura, '#000000');
     
-    // --- Imagem de Fundo (Banner) ---
+    // --- 1. Imagem de Fundo (Banner) ---
+    // (O 'anime.bannerImage' pode ter sido editado pelo usuario)
     if (anime.bannerImage) {
       const banner = await Jimp.read(anime.bannerImage);
-      banner.cover(largura, altura);
+      banner.cover(largura, altura); // Cobre 1280x720
       image.composite(banner, 0, 0);
     }
     
+    // --- 2. Overlay (Escurecimento) ---
+    // (O overlay vai por cima do fundo)
     const overlay = new Jimp(largura, altura, '#000000');
     overlay.opacity(0.6);
     image.composite(overlay, 0, 0);
     
-    // --- Imagem do Poster (Cover) ---
+    // --- 3. Imagem do Poster (Cover) ---
+    // (O poster vai por cima do overlay)
+    let posterWidth = 0; // Vamos guardar a largura do poster
     if (anime.coverImage && anime.coverImage.large) {
       const cover = await Jimp.read(anime.coverImage.large);
       
-      // --- *** MUDANCA: Voltamos a redimensionar pela LARGURA *** ---
-      const coverWidth = largura * 0.3; // 30% da largura da tela
-      cover.resize(coverWidth, Jimp.AUTO); // Redimensiona pela largura
+      // --- *** A MUDANCA CORRETA *** ---
+      // Redimensiona o poster para PREENCHER a altura total (720px)
+      cover.resize(Jimp.AUTO, altura); 
       
-      const coverX = largura - cover.bitmap.width - padding;
-      const coverY = padding;
+      posterWidth = cover.bitmap.width; // Salva a largura
+      
+      // Alinha na direita (X) e no topo (Y)
+      const coverX = largura - posterWidth;
+      const coverY = 0; 
+      
       image.composite(cover, coverX, coverY);
     }
     
+    // --- 4. Textos ---
+    // A area de texto agora respeita o poster
+    const textoAreaLargura = largura - posterWidth - (padding * 2);
+
     let currentTextY = padding;
     const temporada = traduzirTemporada(anime.season);
     const episodios = anime.episodes || '??';
