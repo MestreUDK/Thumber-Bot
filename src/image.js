@@ -1,5 +1,5 @@
 // ARQUIVO: src/image.js
-// (CORRIGIDO: Logo desativada, Classificacao na ESQUERDA)
+// (CORRIGIDO: Poster redimensionado pela ALTURA, Classificacao na ESQUERDA)
 
 const Jimp = require('jimp');
 const path = require('path');
@@ -37,6 +37,8 @@ async function gerarCapa(anime) {
     const textoAreaLargura = largura * 0.6;
     const image = new Jimp(largura, altura, '#000000');
     
+    // --- Imagem de Fundo (Banner) ---
+    // (O 'anime.bannerImage' pode ter sido editado pelo usuario)
     if (anime.bannerImage) {
       const banner = await Jimp.read(anime.bannerImage);
       banner.cover(largura, altura);
@@ -47,11 +49,18 @@ async function gerarCapa(anime) {
     overlay.opacity(0.6);
     image.composite(overlay, 0, 0);
     
+    // --- Imagem do Poster (Cover) ---
+    // (O 'anime.coverImage.large' pode ter sido editado pelo usuario)
     if (anime.coverImage && anime.coverImage.large) {
       const cover = await Jimp.read(anime.coverImage.large);
-      const coverWidth = largura * 0.3;
-      cover.resize(coverWidth, Jimp.AUTO); 
-      image.composite(cover, largura - cover.bitmap.width - padding, padding);
+      
+      // --- *** MUDANCA: REDIMENSIONAR PELA ALTURA *** ---
+      const coverHeight = altura - (padding * 2); // 720 - 80 = 640px
+      cover.resize(Jimp.AUTO, coverHeight); // Redimensiona pela altura
+      
+      const coverX = largura - cover.bitmap.width - padding;
+      const coverY = padding;
+      image.composite(cover, coverX, coverY);
     }
     
     let currentTextY = padding;
@@ -93,35 +102,10 @@ async function gerarCapa(anime) {
       currentTagX += tagWidth + 10;
     }
     
-    // --- *** BLOCO DA LOGO/WATERMARK (DESATIVADO) *** ---
-    /*
-    try {
-        const logoPath = path.join(__dirname, '..', 'assets', 'logo', 'logo1.jpg');
-        const logo = await Jimp.read(logoPath);
-        const watermarkText = '@AnimesUDK';
-        const watermarkFont = fontInfo;
-        const logoHeight = 40;
-        
-        logo.resize(Jimp.AUTO, logoHeight);
-        
-        const logoX = padding;
-        const logoY = altura - padding - logoHeight;
-        
-        const textHeight = Jimp.measureTextHeight(watermarkFont, watermarkText, 1000);
-        const textX = logoX + logo.bitmap.width + 10;
-        const textY = altura - padding - textHeight;
-        
-        image.composite(logo, logoX, logoY);
-        image.print(watermarkFont, textX, textY, watermarkText);
-
-    } catch (err) {
-        console.warn(`Aviso: Nao foi possivel carregar a logo/logo1.jpg.`, err.message);
-    }
-    */
-    // --- FIM DO BLOCO DA LOGO ---
-
+    // Bloco da logo (Desativado como voce pediu)
+    /* ... */
     
-    // --- *** CLASSIFICACAO (POSICAO CORRIGIDA PARA ESQUERDA) *** ---
+    // Classificacao (Posicao na Esquerda)
     if (anime.classificacaoManual) { 
       const ratingFileName = getRatingImageName(anime.classificacaoManual);
       if (ratingFileName) {
@@ -130,7 +114,6 @@ async function gerarCapa(anime) {
           const ratingImage = await Jimp.read(ratingImagePath);
           ratingImage.resize(Jimp.AUTO, 60);
           
-          // POSICAO: Alinhado a esquerda (padding), e ao fundo (padding)
           const ratingX = padding;
           const ratingY = altura - ratingImage.bitmap.height - padding; 
 
