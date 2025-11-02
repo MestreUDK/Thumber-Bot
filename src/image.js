@@ -1,9 +1,7 @@
-// ARQUIVO: image.js
-// (Atualizado para desenhar a classificacao manual)
-
+// ARQUIVO: src/image.js
 const Jimp = require('jimp');
 const path = require('path');
-// Importamos as DUAS funcoes
+// ATUALIZADO: O caminho para utils.js nao muda, pois estao na mesma pasta
 const { traduzirTemporada, getRatingImageName } = require('./utils.js');
 
 let fontTitulo, fontInfo, fontTag;
@@ -14,13 +12,13 @@ async function carregarFontes() {
   }
   try {
     console.log('Carregando fontes personalizadas (3 fontes)...');
-    fontTitulo = await Jimp.loadFont(path.join(__dirname, 'fonts', 'boogaloo_40.fnt'));
-    fontInfo = await Jimp.loadFont(path.join(__dirname, 'fonts', 'roboto_27.fnt'));
-    fontTag = await Jimp.loadFont(path.join(__dirname, 'fonts', 'roboto_25.fnt'));
+    // ATUALIZADO: Adiciona '..' e 'assets' no caminho
+    fontTitulo = await Jimp.loadFont(path.join(__dirname, '..', 'assets', 'fonts', 'boogaloo_40.fnt'));
+    fontInfo = await Jimp.loadFont(path.join(__dirname, '..', 'assets', 'fonts', 'roboto_27.fnt'));
+    fontTag = await Jimp.loadFont(path.join(__dirname, '..', 'assets', 'fonts', 'roboto_25.fnt'));
     console.log('Fontes carregadas com sucesso.');
   } catch (err) {
     console.error('ERRO CRITICO AO CARREGAR FONTES:', err);
-    console.log('Usando fontes padrao como fallback...');
     fontTitulo = await Jimp.loadFont(Jimp.FONT_SANS_64_WHITE);
     fontInfo = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE);
     fontTag = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE);
@@ -58,7 +56,6 @@ async function gerarCapa(anime) {
     let currentTextY = padding;
     const temporada = traduzirTemporada(anime.season);
     const episodios = anime.episodes || '??';
-    
     const infoTopo = `${temporada} ${anime.seasonYear} - ${episodios} EPISODIOS`;
     image.print(fontInfo, padding, currentTextY, infoTopo, textoAreaLargura);
     currentTextY += Jimp.measureTextHeight(fontInfo, infoTopo, textoAreaLargura) + 10;
@@ -82,21 +79,20 @@ async function gerarCapa(anime) {
       const genreText = genero.toUpperCase();
       const textWidth = Jimp.measureText(fontTag, genreText);
       const tagWidth = textWidth + (tagPaddingHorizontal * 2);
-
       if (currentTagX + tagWidth > textoAreaLargura + padding) {
         currentTagX = padding;
         currentTagY += tagHeight + 10;
       }
-      
       const tagBg = new Jimp(tagWidth, tagHeight, '#FFA500');
       image.composite(tagBg, currentTagX, currentTagY);
       image.print(fontTag, currentTagX + tagPaddingHorizontal, currentTagY + 2, genreText);
       currentTagX += tagWidth + 10;
     }
     
-    // --- WATERMARK NA ESQUERDA ---
+    // Watermark
     try {
-        const logoPath = path.join(__dirname, 'logo', 'logo1.jpg');
+        // ATUALIZADO: Adiciona '..' e 'assets' no caminho
+        const logoPath = path.join(__dirname, '..', 'assets', 'logo', 'logo1.jpg');
         const logo = await Jimp.read(logoPath);
         const watermarkText = '@AnimesUDK';
         const watermarkFont = fontInfo;
@@ -115,29 +111,23 @@ async function gerarCapa(anime) {
         image.print(fontInfo, padding, altura - padding - Jimp.measureTextHeight(fontInfo, fallbackText, 1000), fallbackText);
     }
     
-    // --- *** NOVO BLOCO: DESENHA A CLASSIFICACAO MANUAL *** ---
-    // (Ele so desenha se 'anime.classificacaoManual' existir)
+    // Classificacao
     if (anime.classificacaoManual) { 
       const ratingFileName = getRatingImageName(anime.classificacaoManual);
       if (ratingFileName) {
         try {
-          const ratingImagePath = path.join(__dirname, 'classificacao', ratingFileName);
+          // ATUALIZADO: Adiciona '..' e 'assets' no caminho
+          const ratingImagePath = path.join(__dirname, '..', 'assets', 'classificacao', ratingFileName);
           const ratingImage = await Jimp.read(ratingImagePath);
-          
-          ratingImage.resize(Jimp.AUTO, 60); // Define altura da imagem (60px)
-          
-          // Posiciona no canto inferior direito
+          ratingImage.resize(Jimp.AUTO, 60);
           const ratingX = largura - ratingImage.bitmap.width - padding;
           const ratingY = altura - ratingImage.bitmap.height - padding;
-
           image.composite(ratingImage, ratingX, ratingY);
-          
         } catch (err) {
           console.warn(`Aviso: Nao foi possivel carregar a imagem ${ratingFileName} da pasta /classificacao/`);
         }
       }
     }
-    // --- *** FIM DO NOVO BLOCO *** ---
     
     const buffer = await image.getBufferAsync(Jimp.MIME_PNG);
     return { success: true, buffer: buffer };
