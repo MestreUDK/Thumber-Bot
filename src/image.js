@@ -1,5 +1,5 @@
 // ARQUIVO: src/image.js
-// (CORRIGIDO: Poster redimensionado pela ALTURA, Classificacao na ESQUERDA)
+// (CORRIGIDO: Poster volta a ser redimensionado pela LARGURA)
 
 const Jimp = require('jimp');
 const path = require('path');
@@ -38,7 +38,6 @@ async function gerarCapa(anime) {
     const image = new Jimp(largura, altura, '#000000');
     
     // --- Imagem de Fundo (Banner) ---
-    // (O 'anime.bannerImage' pode ter sido editado pelo usuario)
     if (anime.bannerImage) {
       const banner = await Jimp.read(anime.bannerImage);
       banner.cover(largura, altura);
@@ -50,13 +49,12 @@ async function gerarCapa(anime) {
     image.composite(overlay, 0, 0);
     
     // --- Imagem do Poster (Cover) ---
-    // (O 'anime.coverImage.large' pode ter sido editado pelo usuario)
     if (anime.coverImage && anime.coverImage.large) {
       const cover = await Jimp.read(anime.coverImage.large);
       
-      // --- *** MUDANCA: REDIMENSIONAR PELA ALTURA *** ---
-      const coverHeight = altura - (padding * 2); // 720 - 80 = 640px
-      cover.resize(Jimp.AUTO, coverHeight); // Redimensiona pela altura
+      // --- *** MUDANCA: Voltamos a redimensionar pela LARGURA *** ---
+      const coverWidth = largura * 0.3; // 30% da largura da tela
+      cover.resize(coverWidth, Jimp.AUTO); // Redimensiona pela largura
       
       const coverX = largura - cover.bitmap.width - padding;
       const coverY = padding;
@@ -102,7 +100,7 @@ async function gerarCapa(anime) {
       currentTagX += tagWidth + 10;
     }
     
-    // Bloco da logo (Desativado como voce pediu)
+    // Bloco da logo (Desativado)
     /* ... */
     
     // Classificacao (Posicao na Esquerda)
