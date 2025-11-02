@@ -1,7 +1,7 @@
 // ARQUIVO: bot.js (Arquivo Principal)
 
 require('dotenv').config();
-const { Telegraf, session } = require('telegraf');
+const { Telegraf, session } = require('telegraf'); // 'session' precisa ser importada
 
 // Importa nossas funcoes da pasta 'src'
 const { buscarAnime } = require('./src/anilist.js');
@@ -17,7 +17,10 @@ if (!BOT_TOKEN) {
 }
 
 const bot = new Telegraf(BOT_TOKEN);
-bot.use(session());
+
+// --- *** A LINHA MAIS IMPORTANTE PARA CORRIGIR O ERRO *** ---
+// Ela CRIA o 'ctx.session'. Sem ela, o erro acontece.
+bot.use(session()); 
 
 // --- REGISTRA OS COMANDOS PRINCIPAIS ---
 
@@ -42,6 +45,9 @@ bot.command('capa', async (ctx) => {
     const anime = resultadoApi.data;
     
     anime.classificacaoManual = null; 
+    
+    // *** O PONTO QUE ESTAVA DANDO ERRO ***
+    // Agora 'ctx.session' vai existir por causa do 'bot.use(session())'
     ctx.session.animeData = anime; 
     ctx.session.awaitingInput = null; 
     
@@ -54,7 +60,7 @@ bot.command('capa', async (ctx) => {
 });
 
 // --- REGISTRA TODOS OS OUTROS EVENTOS ---
-// (Botoes e respostas de texto)
+// (Botoes e respostas de texto da pasta 'src/events.js')
 registerEvents(bot);
 
 
