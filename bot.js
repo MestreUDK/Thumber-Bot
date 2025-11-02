@@ -12,6 +12,7 @@ if (!BOT_TOKEN) {
 
 const bot = new Telegraf(BOT_TOKEN);
 
+// --- Função da API ANILIST (continua igual) ---
 async function buscarAnime(nome) {
   const query = `
     query ($search: String) {
@@ -34,7 +35,7 @@ async function buscarAnime(nome) {
         coverImage {
           large
         }
-        bannerImage # Precisamos desta para o fundo!
+        bannerImage
       }
     }
   `;
@@ -51,6 +52,18 @@ async function buscarAnime(nome) {
   } catch (error) {
     console.error('Erro ao buscar no AniList:', error.message);
     return null;
+  }
+}
+
+// --- FUNÇÃO PARA TRADUZIR NOME DA TEMPORADA ---
+function traduzirTemporada(season) {
+  if (!season) return '';
+  switch (season.toUpperCase()) {
+    case 'SPRING': return 'PRIMAVERA';
+    case 'SUMMER': return 'VERÃO';
+    case 'FALL': return 'OUTONO';
+    case 'WINTER': return 'INVERNO';
+    default: return season;
   }
 }
 
@@ -74,54 +87,83 @@ bot.command('capa', async (ctx) => {
   }
 
   try {
-    // === NOVAS DIMENSÕES DA IMAGEM FINAL ===
-    // Largura padrão para posts de imagem no Telegram (ou redes sociais)
-    const largura = 1280; 
-    const altura = 720; // Proporção 16:9
+    const largura = 1280;
+    const altura = 720;
+    const padding = 40; // Espaçamento das bordas
 
-    const image = new Jimp(largura, altura, '#000000'); // Fundo preto inicial
-
-    // === 1. Baixar e adicionar a IMAGEM DE FUNDO (Banner) ===
+    // === 1. IMAGEM DE FUNDO (Banner) ===
+    // Cria uma imagem base. Se o banner não existir, fica preta.
+    const image = new Jimp(largura, altura, '#000000');
+    
     if (anime.bannerImage) {
       const banner = await Jimp.read(anime.bannerImage);
-      // Redimensiona o banner para cobrir toda a largura, mantendo a proporção
-      banner.resize(largura, Jimp.AUTO); 
-      // Se a altura ainda for maior que a tela, corta o excesso
-      if (banner.bitmap.height > altura) {
-        banner.crop(0, (banner.bitmap.height - altura) / 2, largura, altura);
-      }
-      image.composite(banner, 0, 0); // Cola o banner na posição (0,0)
-      
-      // Opcional: Escurecer o fundo para o texto aparecer melhor
-      image.color([{ apply: 'darken', params: [50] }]); // Escurece 50%
+      // *** MUDANÇA IMPORTANTE ***
+      // .cover() faz a imagem preencher a tela (1280x720), cortando o excesso
+      banner.cover(largura, altura);
+      image.composite(banner, 0, 0); // Cola o banner na base
     }
-    
-    // === 2. Baixar e adicionar a IMAGEM DE CAPA (Cover) ===
-    const coverLargura = largura * 0.3; // 30% da largura da tela
-    const coverAltura = Jimp.AUTO;
-    const coverX = largura - coverLargura - 30; // 30px da borda direita
-    const coverY = 30; // 30px da borda superior
 
+    // Adiciona uma camada escura por cima para o texto ficar legível
+    const overlay = new Jimp(largura, altura, '#000000');
+    overlay.opacity(0.6); // 60% de opacidade (preto semi-transparente)
+    image.composite(overlay, 0, 0);
+
+    // === 2. IMAGEM DE CAPA (Cover/Pôster) ===
     if (anime.coverImage && anime.coverImage.large) {
       const cover = await Jimp.read(anime.coverImage.large);
-      cover.resize(coverLargura, coverAltura);
-      image.composite(cover, coverX, coverY); // Cola a capa
+      // Redimensiona a capa para 30% da largura da tela
+      cover.resize(largura * 0.3, Jimp.AUTO); 
+      // Posição: 40px da borda direita, 40px da borda de cima
+      image.composite(cover, largura - cover.bitmap.width - padding, padding);
     }
 
+    // === 3. FONTES ===
+    // Vamos carregar as fontes que vamos usar
+    const fontTitulo = await Jimp.loadFont(Jimp.FONT_SANS_64_WHITE);
+    const fontInfo = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE);
+    const fontTag = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE); // Fonte pequena para as tags
 
-    // === 3. Adicionar TEXTO BÁSICO (Por enquanto, um teste) ===
-    // Carregamos a fonte uma vez e a usamos para todos os textos
-    const fontTitulo = await Jimp.loadFont(Jimp.FONT_SANS_64_WHITE); // Fonte maior para título
-    const fontNormal = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE); // Fonte normal para detalhes
+    // === 4. TEXTOS PRINCIPAIS ===
+    const temporada = traduzirTemporada(anime.season);
+    const infoTopo = `${temporada} ${anime.seasonYear} • ${anime.episodes} EPISÓDIOS`;
+    
+    // Info (ex: OUTONO 2025 • 22 EPISÓDIOS)
+    image.print(fontInfo, padding, padding, infoTopo);
+    
+    // Título do Anime
+    const titulo = anime.title.romaji || anime.title.english;
+    // (Jimp não quebra linha automático, então limitamos o espaço)
+    image.print(fontTitulo, padding, padding + 40, titulo, largura * 0.6); // Título abaixo da info
 
-    const tituloAnime = anime.title.romaji || anime.title.english;
-    const estudio = anime.studios.nodes.length > 0 ? anime.studios.nodes[0].name : 'Estúdio desconhecido';
+    // === 5. DESENHAR AS TAGS DE GÊNERO ===
+    let currentX = padding;
+    let currentY = padding + 150; // Posição Y inicial das tags
+    const tagHeight = 30; // Altura da tag
+    const tagPadding = 10; // Espaçamento dentro da tag
 
-    // Posições aproximadas
-    image.print(fontTitulo, 30, 30, tituloAnime); // Título no canto superior esquerdo
-    image.print(fontNormal, 30, 120, `Estúdio: ${estudio}`); // Estúdio abaixo do título
-    image.print(fontNormal, 30, 160, `Episódios: ${anime.episodes}`); // Episódios
+    // Para cada gênero na lista...
+    for (const genero of anime.genres.slice(0, 4)) { // Pega só os 4 primeiros
+      const genreText = genero.toUpperCase();
+      const textWidth = Jimp.measureText(fontTag, genreText); // Mede o texto
+      const tagWidth = textWidth + (tagPadding * 2); // Largura total da tag
 
+      // Desenha o fundo da tag (um retângulo laranja)
+      const tagBg = new Jimp(tagWidth, tagHeight, '#FFA500'); // Cor laranja (similar ao Shounen)
+      image.composite(tagBg, currentX, currentY);
+
+      // Escreve o texto do gênero em cima do retângulo
+      image.print(fontTag, currentX + tagPadding, currentY + (tagHeight / 4), genreText);
+
+      // Move o X para a próxima tag
+      currentX += tagWidth + 10; // 10px de espaço entre tags
+    }
+    
+    // === 6. ADICIONAR SEU WATERMARK (ex: @AnimesUDK) ===
+    // (Igual da sua referência)
+    image.print(fontInfo, padding, altura - padding - 32, '@AnimesUDK');
+
+
+    // === 7. ENVIAR A IMAGEM ===
     const buffer = await image.getBufferAsync(Jimp.MIME_PNG);
     return ctx.replyWithPhoto({ source: buffer });
 
@@ -131,6 +173,5 @@ bot.command('capa', async (ctx) => {
   }
 });
 
-
 bot.launch();
-console.log('Bot iniciado e rodando na nuvem (com Jimp e imagens)...');
+console.log('Bot iniciado e rodando na nuvem (com Fundo e Tags)...');
