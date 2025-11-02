@@ -13,7 +13,7 @@ function traduzirTemporada(season) {
   }
 }
 
-// --- FUNCAO DE MAPEAMENTO DE CLASSIFICACAO (NECESSARIA) ---
+// --- FUNCAO DE MAPEAMENTO DE CLASSIFICACAO (A QUE ESTA FALTANDO) ---
 // (Usa as regras que voce me passou)
 function getRatingImageName(apiRating) {
   if (!apiRating) return null;
