@@ -1,12 +1,11 @@
 // ARQUIVO: bot.js
-// (Arquivo principal, agora muito mais limpo)
 
 require('dotenv').config();
 const { Telegraf } = require('telegraf');
 
-// Importamos nossas funcoes dos arquivos separados
 const { buscarAnime } = require('./anilist.js');
-const { gerarCapa } = require('./image.js');
+// Importamos as DUAS funcoes
+const { gerarCapa, carregarFontes } = require('./image.js'); 
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
@@ -31,7 +30,6 @@ bot.command('capa', async (ctx) => {
 
     ctx.reply(`Buscando dados para: ${nomeDoAnime}...`);
 
-    // 1. CHAMA O MODULO DA API
     const resultadoApi = await buscarAnime(nomeDoAnime);
 
     if (!resultadoApi.success) {
@@ -41,14 +39,12 @@ bot.command('capa', async (ctx) => {
     const anime = resultadoApi.data;
     ctx.reply(`Anime encontrado! Gerando imagem...`);
 
-    // 2. CHAMA O MODULO DE IMAGEM
     const resultadoImagem = await gerarCapa(anime);
 
     if (!resultadoImagem.success) {
       return ctx.reply(`Erro ao gerar imagem: ${resultadoImagem.error}`);
     }
     
-    // 3. ENVIA O RESULTADO
     return ctx.replyWithPhoto({ source: resultadoImagem.buffer });
 
   } catch (err) {
@@ -58,5 +54,12 @@ bot.command('capa', async (ctx) => {
 });
 
 
-bot.launch();
-console.log('Bot MODULARIZADO iniciado e rodando na nuvem...');
+// *** CHAMA A FUNCAO DE CARREGAR FONTES ***
+// Diz ao bot para carregar as fontes ASSIM que ele ligar
+carregarFontes().then(() => {
+  bot.launch();
+  console.log('Bot MODULARIZADO iniciado e rodando (fontes carregadas)...');
+}).catch(err => {
+  console.error('Falha ao carregar fontes no inicio!', err);
+  process.exit(1);
+});
