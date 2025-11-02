@@ -12,7 +12,7 @@ if (!BOT_TOKEN) {
 
 const bot = new Telegraf(BOT_TOKEN);
 
-// --- Função da API ANILIST (continua igual) ---
+// --- Função da API ANILIST (com ageRating) ---
 async function buscarAnime(nome) {
   const query = `
     query ($search: String) {
@@ -36,6 +36,7 @@ async function buscarAnime(nome) {
           large
         }
         bannerImage
+        ageRating // <-- Já estávamos pegando isso
       }
     }
   `;
@@ -67,6 +68,31 @@ function traduzirTemporada(season) {
   }
 }
 
+// *** NOVA FUNÇÃO ***
+// --- Pega o valor da API (ex: "16") e traduz para o nome do arquivo (ex: "A16.png") ---
+function getRatingImageName(apiRating) {
+  if (!apiRating) return null;
+  
+  const rating = String(apiRating).toUpperCase();
+
+  // Mapeamento padrão BR (que você vai upar)
+  if (rating === 'G' || rating === 'ALL') return 'L.png';
+  if (rating === '10') return 'A10.png';
+  if (rating === '12') return 'A12.png';
+  if (rating === 'PG' || rating === 'PG-13') return 'A12.png'; // Mapeia PG/PG-13 para 12
+  if (rating === '14') return 'A14.png';
+  if (rating === '16') return 'A16.png'; // <-- O caso da sua referência
+  if (rating === '18' || rating === 'R' || rating === 'R+') return 'A18.png'; // Mapeia R/R+ para 18
+
+  // Se a API retornar só o número
+  if (rating.match(/^[0-9]+$/)) { 
+    return `A${rating}.png`; 
+  }
+  
+  return null; // Não achou um mapeamento
+}
+
+
 bot.start((ctx) => {
   ctx.reply('Olá! Eu sou o bot gerador de capas.\n\nEnvie /capa [nome do anime] para começar.');
 });
@@ -89,81 +115,98 @@ bot.command('capa', async (ctx) => {
   try {
     const largura = 1280;
     const altura = 720;
-    const padding = 40; // Espaçamento das bordas
+    const padding = 40;
+    const textoAreaLargura = largura * 0.6;
 
-    // === 1. IMAGEM DE FUNDO (Banner) ===
-    // Cria uma imagem base. Se o banner não existir, fica preta.
     const image = new Jimp(largura, altura, '#000000');
     
     if (anime.bannerImage) {
       const banner = await Jimp.read(anime.bannerImage);
-      // *** MUDANÇA IMPORTANTE ***
-      // .cover() faz a imagem preencher a tela (1280x720), cortando o excesso
       banner.cover(largura, altura);
-      image.composite(banner, 0, 0); // Cola o banner na base
+      image.composite(banner, 0, 0);
     }
 
-    // Adiciona uma camada escura por cima para o texto ficar legível
     const overlay = new Jimp(largura, altura, '#000000');
-    overlay.opacity(0.6); // 60% de opacidade (preto semi-transparente)
+    overlay.opacity(0.6);
     image.composite(overlay, 0, 0);
 
-    // === 2. IMAGEM DE CAPA (Cover/Pôster) ===
     if (anime.coverImage && anime.coverImage.large) {
       const cover = await Jimp.read(anime.coverImage.large);
-      // Redimensiona a capa para 30% da largura da tela
-      cover.resize(largura * 0.3, Jimp.AUTO); 
-      // Posição: 40px da borda direita, 40px da borda de cima
+      const coverWidth = largura * 0.3;
+      cover.resize(coverWidth, Jimp.AUTO); 
       image.composite(cover, largura - cover.bitmap.width - padding, padding);
     }
 
-    // === 3. FONTES ===
-    // Vamos carregar as fontes que vamos usar
     const fontTitulo = await Jimp.loadFont(Jimp.FONT_SANS_64_WHITE);
     const fontInfo = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE);
-    const fontTag = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE); // Fonte pequena para as tags
+    const fontTag = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE);
 
-    // === 4. TEXTOS PRINCIPAIS ===
+    let currentTextY = padding;
+
     const temporada = traduzirTemporada(anime.season);
     const infoTopo = `${temporada} ${anime.seasonYear} • ${anime.episodes} EPISÓDIOS`;
-    
-    // Info (ex: OUTONO 2025 • 22 EPISÓDIOS)
-    image.print(fontInfo, padding, padding, infoTopo);
-    
-    // Título do Anime
+    image.print(fontInfo, padding, currentTextY, infoTopo, textoAreaLargura);
+    currentTextY += Jimp.measureTextHeight(fontInfo, infoTopo, textoAreaLargura) + 10;
+
     const titulo = anime.title.romaji || anime.title.english;
-    // (Jimp não quebra linha automático, então limitamos o espaço)
-    image.print(fontTitulo, padding, padding + 40, titulo, largura * 0.6); // Título abaixo da info
+    image.print(fontTitulo, padding, currentTextY, titulo, textoAreaLargura);
+    currentTextY += Jimp.measureTextHeight(fontTitulo, titulo, textoAreaLargura) + 20;
 
-    // === 5. DESENHAR AS TAGS DE GÊNERO ===
-    let currentX = padding;
-    let currentY = padding + 150; // Posição Y inicial das tags
-    const tagHeight = 30; // Altura da tag
-    const tagPadding = 10; // Espaçamento dentro da tag
+    const estudio = anime.studios.nodes.length > 0 ? anime.studios.nodes[0].name : 'Estúdio desconhecido';
+    image.print(fontInfo, padding, currentTextY, `Estúdio: ${estudio}`, textoAreaLargura);
+    currentTextY += Jimp.measureTextHeight(fontInfo, `Estúdio: ${estudio}`, textoAreaLargura) + 20;
 
-    // Para cada gênero na lista...
-    for (const genero of anime.genres.slice(0, 4)) { // Pega só os 4 primeiros
+    let currentTagX = padding;
+    let currentTagY = currentTextY;
+    const tagHeight = 30;
+    const tagPaddingHorizontal = 10;
+    const tagPaddingVertical = 5;
+
+    for (const genero of anime.genres.slice(0, 4)) {
       const genreText = genero.toUpperCase();
-      const textWidth = Jimp.measureText(fontTag, genreText); // Mede o texto
-      const tagWidth = textWidth + (tagPadding * 2); // Largura total da tag
+      const textWidth = Jimp.measureText(fontTag, genreText);
+      const tagWidth = textWidth + (tagPaddingHorizontal * 2);
 
-      // Desenha o fundo da tag (um retângulo laranja)
-      const tagBg = new Jimp(tagWidth, tagHeight, '#FFA500'); // Cor laranja (similar ao Shounen)
-      image.composite(tagBg, currentX, currentY);
+      if (currentTagX + tagWidth > textoAreaLargura + padding) {
+        currentTagX = padding;
+        currentTagY += tagHeight + 10;
+      }
 
-      // Escreve o texto do gênero em cima do retângulo
-      image.print(fontTag, currentX + tagPadding, currentY + (tagHeight / 4), genreText);
+      const tagBg = new Jimp(tagWidth, tagHeight, '#FFA500');
+      image.composite(tagBg, currentTagX, currentTagY);
+      image.print(fontTag, currentTagX + tagPaddingHorizontal, currentTagY + tagPaddingVertical, genreText);
 
-      // Move o X para a próxima tag
-      currentX += tagWidth + 10; // 10px de espaço entre tags
+      currentTagX += tagWidth + 10;
     }
-    
-    // === 6. ADICIONAR SEU WATERMARK (ex: @AnimesUDK) ===
-    // (Igual da sua referência)
-    image.print(fontInfo, padding, altura - padding - 32, '@AnimesUDK');
+
+    image.print(fontInfo, padding, altura - padding - Jimp.measureTextHeight(fontInfo, '@AnimesUDK', largura), '@AnimesUDK');
+
+    // *** CÓDIGO DE CLASSIFICAÇÃO ATUALIZADO ***
+    // Em vez de desenhar, agora ele vai CARREGAR sua imagem
+    const ratingFileName = getRatingImageName(anime.ageRating); // Ex: "A16.png"
+    if (ratingFileName) {
+      try {
+        // Tenta carregar a imagem da pasta /classificacao/
+        const ratingImagePath = `./classificacao/${ratingFileName}`;
+        const ratingImage = await Jimp.read(ratingImagePath);
+
+        // Redimensiona para uma altura padrão (ex: 60px)
+        ratingImage.resize(Jimp.AUTO, 60); 
+        
+        const ratingX = largura - ratingImage.bitmap.width - padding;
+        const ratingY = altura - ratingImage.bitmap.height - padding;
+
+        // Cola a sua imagem na capa
+        image.composite(ratingImage, ratingX, ratingY);
+        
+      } catch (err) {
+        console.warn(`Aviso: Não foi possível carregar a imagem ${ratingFileName} da pasta /classificacao/`);
+        // Se o arquivo não existir, ele não faz nada e não quebra o bot.
+      }
+    }
+    // *** FIM DA ATUALIZAÇÃO ***
 
 
-    // === 7. ENVIAR A IMAGEM ===
     const buffer = await image.getBufferAsync(Jimp.MIME_PNG);
     return ctx.replyWithPhoto({ source: buffer });
 
@@ -173,5 +216,7 @@ bot.command('capa', async (ctx) => {
   }
 });
 
+
 bot.launch();
-console.log('Bot iniciado e rodando na nuvem (com Fundo e Tags)...');
+console.log('Bot iniciado e rodando na nuvem (com Imagens de Classificação)...');
+
