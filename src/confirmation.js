@@ -1,4 +1,6 @@
 // ARQUIVO: src/confirmation.js
+// (Atualizado para usar texto monoespacado)
+
 const { Markup } = require('telegraf');
 const { traduzirTemporada } = require('./utils.js');
 
@@ -16,15 +18,18 @@ async function enviarConfirmacao(ctx) {
   const tags = (animeData.genres && animeData.genres.length > 0) ? animeData.genres.join(', ') : 'N/A';
   const classificacao = animeData.classificacaoManual || '(Nenhuma)';
 
+  // --- *** MUDANCA: Adicionado "```" para texto monoespacado *** ---
   const texto = `
 Confirme os dados (Estes dados serao usados na imagem):
 
-**Titulo:** ${titulo}
-**Estudio:** ${estudio}
-**Info:** ${temporada} - ${episodios} EPISODIOS
-**Tags:** ${tags}
-**Classificacao:** ${classificacao}
-  `;
+` + "```" + `
+Titulo: ${titulo}
+Estudio: ${estudio}
+Info: ${temporada} - ${episodios} EPISODIOS
+Tags: ${tags}
+Classificacao: ${classificacao}
+` + "```" + `
+`;
 
   // Prepara os botoes
   const botoes = Markup.inlineKeyboard([
@@ -48,7 +53,8 @@ Confirme os dados (Estes dados serao usados na imagem):
     console.warn('Nao consegui apagar a mensagem anterior (normal se for a primeira vez)');
   }
 
-  await ctx.replyWithHTML(texto, botoes);
+  // Envia a mensagem (usamos .reply() normal, ja que ``` nao e HTML)
+  await ctx.reply(texto, botoes);
 }
 
 module.exports = { enviarConfirmacao };
