@@ -2,6 +2,8 @@ require('dotenv').config();
 const { Telegraf } = require('telegraf');
 const axios = require('axios');
 const Jimp = require('jimp');
+const fs = require('fs'); // <-- NOVO: Módulo para ler arquivos
+const path = require('path'); // <-- NOVO: Módulo para caminhos de arquivos
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
@@ -10,12 +12,25 @@ if (!BOT_TOKEN) {
   process.exit(1);
 }
 
+// --- NOVO: Carregar a Query do Arquivo ---
+// O bot vai ler o arquivo 'query.graphql' que você acabou de criar
+// Isso evita 100% dos erros de 'copiar e colar'
+let ANILIST_QUERY;
+try {
+  ANILIST_QUERY = fs.readFileSync(path.join(__dirname, 'query.graphql'), 'utf-8');
+} catch (err) {
+  console.error('ERRO FATAL: Nao foi possivel ler o arquivo query.graphql!', err);
+  process.exit(1); // Desliga o bot se nao achar o arquivo
+}
+// --- FIM DA LEITURA DO ARQUIVO ---
+
+
 const bot = new Telegraf(BOT_TOKEN);
 
-// --- Função da API ANILIST (MODIFICADA PARA REPORTAR ERRO) ---
+// --- Função da API ANILIST (MODIFICADA) ---
 async function buscarAnime(nome) {
-  // Query em linha unica para evitar erros de encoding
-  const query = 'query ($search: String) { Media (search: $search, type: ANIME) { title { romaji english } season seasonYear episodes studios(isMain: true) { nodes { name } } genres averageScore format coverImage { large } bannerImage ageRating } }';
+  // Agora a 'query' vem do arquivo que lemos
+  const query = ANILIST_QUERY; 
   
   const variables = {
     search: nome
@@ -28,16 +43,13 @@ async function buscarAnime(nome) {
     });
 
     if (!response.data.data || !response.data.data.Media) {
-      // Se a API respondeu, mas não achou o anime
       return { success: false, error: 'Anime nao encontrado pela API.' };
     }
-
-    // Retorna sucesso
     return { success: true, data: response.data.data.Media };
 
   } catch (error) {
     console.error(`Erro GERAL no axios ao buscar no AniList por "${nome}":`, error.message);
-    // Retorna falha E a mensagem de erro
+    // Erro 400 (Bad Request) deve desaparecer agora
     return { success: false, error: error.message };
   }
 }
@@ -75,7 +87,7 @@ bot.start((ctx) => {
   ctx.reply('Ola! Eu sou o bot gerador de capas.\n\nEnvie /capa [nome do anime] para comecar.');
 });
 
-// *** COMANDO /CAPA ATUALIZADO PARA REPORTAR ERRO ***
+// --- COMANDO /CAPA (sem mudanças na lógica de resposta) ---
 bot.command('capa', async (ctx) => {
   try {
     const nomeDoAnime = ctx.message.text.replace('/capa', '').trim();
@@ -86,65 +98,50 @@ bot.command('capa', async (ctx) => {
 
     ctx.reply(`Buscando dados para: ${nomeDoAnime}...`);
 
-    // --- MUDANÇA AQUI ---
     const resultado = await buscarAnime(nomeDoAnime);
 
-    // Se a busca falhou (success == false)
     if (!resultado.success) {
-      // O bot vai te dizer QUAL foi o erro
       return ctx.reply(`Desculpe, falha ao buscar. A API retornou o erro: ${resultado.error}`);
     }
     
-    // Se deu certo, continuamos
     const anime = resultado.data;
-    // --- FIM DA MUDANÇA ---
-
     ctx.reply(`Anime encontrado! Gerando imagem...`);
 
-    // --- O resto do código de gerar imagem (sem alterações) ---
+    // --- O resto do código de gerar imagem (Jimp) continua igual ---
     const largura = 1280;
     const altura = 720;
     const padding = 40;
     const textoAreaLargura = largura * 0.6;
-
     const image = new Jimp(largura, altura, '#000000');
-    
     if (anime.bannerImage) {
       const banner = await Jimp.read(anime.bannerImage);
       banner.cover(largura, altura);
       image.composite(banner, 0, 0);
     }
-
     const overlay = new Jimp(largura, altura, '#000000');
     overlay.opacity(0.6);
     image.composite(overlay, 0, 0);
-
     if (anime.coverImage && anime.coverImage.large) {
       const cover = await Jimp.read(anime.coverImage.large);
       const coverWidth = largura * 0.3;
       cover.resize(coverWidth, Jimp.AUTO); 
       image.composite(cover, largura - cover.bitmap.width - padding, padding);
     }
-
     const fontTitulo = await Jimp.loadFont(Jimp.FONT_SANS_64_WHITE);
     const fontInfo = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE);
     const fontTag = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE);
-
     let currentTextY = padding;
     const temporada = traduzirTemporada(anime.season);
     const episodios = anime.episodes || '??';
     const infoTopo = `${temporada} ${anime.seasonYear} - ${episodios} EPISODIOS`;
     image.print(fontInfo, padding, currentTextY, infoTopo, textoAreaLargura);
     currentTextY += Jimp.measureTextHeight(fontInfo, infoTopo, textoAreaLargura) + 10;
-
     const titulo = anime.title.romaji || anime.title.english || "Titulo Desconhecido";
     image.print(fontTitulo, padding, currentTextY, titulo, textoAreaLargura);
     currentTextY += Jimp.measureTextHeight(fontTitulo, titulo, textoAreaLargura) + 20;
-
     const estudio = anime.studios.nodes.length > 0 ? anime.studios.nodes[0].name : 'Estudio desconhecido';
     image.print(fontInfo, padding, currentTextY, `Estudio: ${estudio}`, textoAreaLargura);
     currentTextY += Jimp.measureTextHeight(fontInfo, `Estudio: ${estudio}`, textoAreaLargura) + 20;
-
     let currentTagX = padding;
     let currentTagY = currentTextY;
     const tagHeight = 30;
@@ -164,9 +161,7 @@ bot.command('capa', async (ctx) => {
       image.print(fontTag, currentTagX + tagPaddingHorizontal, currentTagY + tagPaddingVertical, genreText);
       currentTagX += tagWidth + 10;
     }
-
     image.print(fontInfo, padding, altura - padding - Jimp.measureTextHeight(fontInfo, '@AnimesUDK', largura), '@AnimesUDK');
-
     const ratingFileName = getRatingImageName(anime.ageRating);
     if (ratingFileName) {
       try {
@@ -180,7 +175,6 @@ bot.command('capa', async (ctx) => {
         console.warn(`Aviso: Nao foi possivel carregar a imagem ${ratingFileName} da pasta /classificacao/`);
       }
     }
-
     const buffer = await image.getBufferAsync(Jimp.MIME_PNG);
     return ctx.replyWithPhoto({ source: buffer });
 
@@ -192,4 +186,4 @@ bot.command('capa', async (ctx) => {
 
 
 bot.launch();
-console.log('Bot iniciado e rodando na nuvem (Versao DEBUG ERRO API)...');
+console.log('Bot iniciado e rodando na nuvem (Lendo query do arquivo)...');
