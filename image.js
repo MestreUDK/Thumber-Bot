@@ -1,8 +1,9 @@
 // ARQUIVO: image.js
+// (Responsavel por toda a geracao de imagem com Jimp)
 
 const Jimp = require('jimp');
 const path = require('path');
-// Importamos SOMENTE a funcao que sobrou
+// Importamos a funcao de traducao
 const { traduzirTemporada } = require('./utils.js');
 
 async function gerarCapa(anime) {
@@ -30,6 +31,7 @@ async function gerarCapa(anime) {
       image.composite(cover, largura - cover.bitmap.width - padding, padding);
     }
     
+    // (Ainda estamos usando as fontes padrao, vamos mudar isso em breve)
     const fontTitulo = await Jimp.loadFont(Jimp.FONT_SANS_64_WHITE);
     const fontInfo = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE);
     const fontTag = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE);
@@ -70,11 +72,34 @@ async function gerarCapa(anime) {
       currentTagX += tagWidth + 10;
     }
     
-    image.print(fontInfo, padding, altura - padding - Jimp.measureTextHeight(fontInfo, '@AnimesUDK', largura), '@AnimesUDK');
+    // --- *** NOVO BLOCO DE WATERMARK COM LOGO *** ---
+    try {
+        const logoPath = path.join(__dirname, 'logo', 'logo1.jpg');
+        const logo = await Jimp.read(logoPath);
+        const watermarkText = '@AnimesUDK';
+        const watermarkFont = fontInfo; // Usa a mesma fonte da Info
+        const logoHeight = 40; // Define a altura da logo
+        
+        logo.resize(Jimp.AUTO, logoHeight); // Redimensiona a logo
+        
+        const logoX = padding;
+        const logoY = altura - padding - logoHeight; // Alinha pela base
+        
+        const textHeight = Jimp.measureTextHeight(watermarkFont, watermarkText, 1000);
+        const textX = logoX + logo.bitmap.width + 10; // 10px de espaco
+        const textY = altura - padding - textHeight; // Alinha pela base
+        
+        image.composite(logo, logoX, logoY); // Cola a logo
+        image.print(watermarkFont, textX, textY, watermarkText); // Escreve o texto
+
+    } catch (err) {
+        console.warn(`Aviso: Nao foi possivel carregar a logo/logo1.jpg.`, err.message);
+        // Fallback: se a logo falhar, escreve so o texto
+        const fallbackText = '@AnimesUDK';
+        image.print(fontInfo, padding, altura - padding - Jimp.measureTextHeight(fontInfo, fallbackText, 1000), fallbackText);
+    }
+    // --- *** FIM DO NOVO BLOCO *** ---
     
-    //
-    // *** O BLOCO DE CODIGO DA CLASSIFICACAO FOI REMOVIDO DAQUI ***
-    //
     
     const buffer = await image.getBufferAsync(Jimp.MIME_PNG);
     return { success: true, buffer: buffer };
