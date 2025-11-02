@@ -1,5 +1,5 @@
 // ARQUIVO: src/confirmation.js
-// (Atualizado para usar texto monoespacado)
+// (Atualizado com botoes de editar imagem)
 
 const { Markup } = require('telegraf');
 const { traduzirTemporada } = require('./utils.js');
@@ -10,7 +10,6 @@ async function enviarConfirmacao(ctx) {
     return ctx.reply('Sessao expirada. Por favor, faca a busca novamente com /capa');
   }
 
-  // Prepara o texto de confirmacao
   const titulo = (animeData.title && animeData.title.romaji) || "N/A";
   const estudio = (animeData.studios && animeData.studios.nodes.length > 0) ? animeData.studios.nodes[0].name : 'N/A';
   const temporada = animeData.season ? `${traduzirTemporada(animeData.season)} ${animeData.seasonYear}` : "N/A";
@@ -18,7 +17,6 @@ async function enviarConfirmacao(ctx) {
   const tags = (animeData.genres && animeData.genres.length > 0) ? animeData.genres.join(', ') : 'N/A';
   const classificacao = animeData.classificacaoManual || '(Nenhuma)';
 
-  // --- *** MUDANCA: Adicionado "```" para texto monoespacado *** ---
   const texto = `
 Confirme os dados (Estes dados serao usados na imagem):
 
@@ -31,7 +29,7 @@ Classificacao: ${classificacao}
 ` + "```" + `
 `;
 
-  // Prepara os botoes
+  // --- *** MUDANCA: NOVOS BOTOES DE IMAGEM *** ---
   const botoes = Markup.inlineKeyboard([
     [ Markup.button.callback('✅ Gerar Capa Agora!', 'generate_final') ],
     [ 
@@ -41,6 +39,10 @@ Classificacao: ${classificacao}
     [ 
       Markup.button.callback('Editar Tags', 'edit_tags'),
       Markup.button.callback('Editar Classificacao', 'edit_rating')
+    ],
+    [ 
+      Markup.button.callback('🖼️ Editar Pôster', 'edit_poster'),
+      Markup.button.callback('🌆 Editar Fundo', 'edit_fundo')
     ],
     [ Markup.button.callback('❌ Cancelar', 'cancel_edit') ]
   ]);
@@ -53,7 +55,6 @@ Classificacao: ${classificacao}
     console.warn('Nao consegui apagar a mensagem anterior (normal se for a primeira vez)');
   }
 
-  // Envia a mensagem (usamos .reply() normal, ja que ``` nao e HTML)
   await ctx.reply(texto, botoes);
 }
 
