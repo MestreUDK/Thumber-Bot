@@ -51,51 +51,50 @@ async function buscarAnime(nome) {
     });
     return response.data.data.Media;
   } catch (error) {
-    console.error('Erro ao buscar no AniList:', error.message);
+    // Agora podemos ver o erro real nos logs do Discloud
+    console.error('Erro ao buscar no AniList:', error.message); 
     return null;
   }
 }
 
-// --- FUNÇÃO PARA TRADUZIR NOME DA TEMPORADA ---
+// --- FUNÇÃO PARA TRADUZIR (SEM ACENTOS) ---
 function traduzirTemporada(season) {
   if (!season) return '';
   switch (season.toUpperCase()) {
     case 'SPRING': return 'PRIMAVERA';
-    case 'SUMMER': return 'VERÃO';
+    case 'SUMMER': return 'VERAO'; // Sem acento
     case 'FALL': return 'OUTONO';
     case 'WINTER': return 'INVERNO';
     default: return season;
   }
 }
 
-// *** FUNÇÃO ATUALIZADA ***
-// --- Pega o valor da API (ex: "PG-13") e traduz para o nome do arquivo (ex: "A14.png") ---
+// --- FUNÇÃO DE MAPEAMENTO DE CLASSIFICAÇÃO (sem mudanças) ---
 function getRatingImageName(apiRating) {
   if (!apiRating) return null;
   
   const rating = String(apiRating).toUpperCase();
 
-  // --- Mapeamento solicitado por você ---
+  // Mapeamento solicitado por você
   if (rating === 'G' || rating === 'ALL') return 'L.png';
   if (rating === 'PG') return 'A12.png';
   if (rating === 'PG-13') return 'A14.png';
-  if (rating === 'R+' || rating === 'R-17' || rating === 'R') return 'A16.png'; // Mapeia R+, R-17 e R para A16
+  if (rating === 'R+' || rating === 'R-17' || rating === 'R') return 'A16.png';
   if (rating === 'NC-17' || rating === 'RX') return 'A18.png';
-  // --- Fim do mapeamento solicitado ---
 
-  // Mapeamento padrão BR (fallback numérico, caso a API mande "16")
+  // Mapeamento padrão BR (fallback numérico)
   if (rating === '10') return 'A10.png';
   if (rating === '12') return 'A12.png';
   if (rating === '14') return 'A14.png';
   if (rating === '16') return 'A16.png';
   if (rating === '18') return 'A18.png';
   
-  return null; // Não achou um mapeamento
+  return null;
 }
 
 
 bot.start((ctx) => {
-  ctx.reply('Olá! Eu sou o bot gerador de capas.\n\nEnvie /capa [nome do anime] para começar.');
+  ctx.reply('Ola! Eu sou o bot gerador de capas.\n\nEnvie /capa [nome do anime] para comecar.');
 });
 
 bot.command('capa', async (ctx) => {
@@ -105,12 +104,14 @@ bot.command('capa', async (ctx) => {
     return ctx.reply('Por favor, me diga o nome do anime. Ex: /capa To Your Eternity');
   }
 
-  ctx.reply(`Buscando dados e gerando capa para: ${nomeDoAnime}... 🎨`);
+  // Mensagem de busca sem acentos e sem emoji
+  ctx.reply(`Buscando dados e gerando capa para: ${nomeDoAnime}...`);
 
   const anime = await buscarAnime(nomeDoAnime);
 
   if (!anime) {
-    return ctx.reply(`Desculpe, não consegui encontrar o anime "${nomeDoAnime}".`);
+    // Resposta de erro sem acentos
+    return ctx.reply(`Desculpe, nao consegui encontrar o anime "${nomeDoAnime}".`);
   }
 
   try {
@@ -145,7 +146,9 @@ bot.command('capa', async (ctx) => {
     let currentTextY = padding;
 
     const temporada = traduzirTemporada(anime.season);
-    const infoTopo = `${temporada} ${anime.seasonYear} • ${anime.episodes} EPISÓDOS`; // Corrigido para EPISÓDIOS
+    
+    // *** MUDANÇA AQUI: Sem '•' e sem 'Ó' ***
+    const infoTopo = `${temporada} ${anime.seasonYear} - ${anime.episodes} EPISODIOS`;
     image.print(fontInfo, padding, currentTextY, infoTopo, textoAreaLargura);
     currentTextY += Jimp.measureTextHeight(fontInfo, infoTopo, textoAreaLargura) + 10;
 
@@ -153,10 +156,12 @@ bot.command('capa', async (ctx) => {
     image.print(fontTitulo, padding, currentTextY, titulo, textoAreaLargura);
     currentTextY += Jimp.measureTextHeight(fontTitulo, titulo, textoAreaLargura) + 20;
 
-    const estudio = anime.studios.nodes.length > 0 ? anime.studios.nodes[0].name : 'Estúdio desconhecido';
-    image.print(fontInfo, padding, currentTextY, `Estúdio: ${estudio}`, textoAreaLargura);
-    currentTextY += Jimp.measureTextHeight(fontInfo, `Estúdio: ${estudio}`, textoAreaLargura) + 20;
+    // *** MUDANÇA AQUI: Sem 'ú' ***
+    const estudio = anime.studios.nodes.length > 0 ? anime.studios.nodes[0].name : 'Estudio desconhecido';
+    image.print(fontInfo, padding, currentTextY, `Estudio: ${estudio}`, textoAreaLargura);
+    currentTextY += Jimp.measureTextHeight(fontInfo, `Estudio: ${estudio}`, textoAreaLargura) + 20;
 
+    // --- Tags (Gêneros) ---
     let currentTagX = padding;
     let currentTagY = currentTextY;
     const tagHeight = 30;
@@ -180,16 +185,17 @@ bot.command('capa', async (ctx) => {
       currentTagX += tagWidth + 10;
     }
 
+    // --- Watermark ---
     image.print(fontInfo, padding, altura - padding - Jimp.measureTextHeight(fontInfo, '@AnimesUDK', largura), '@AnimesUDK');
 
-    // --- CÓDIGO DE CLASSIFICAÇÃO (Usa a nova função) ---
-    const ratingFileName = getRatingImageName(anime.ageRating); // Ex: "A14.png"
+    // --- Classificação ---
+    const ratingFileName = getRatingImageName(anime.ageRating);
     if (ratingFileName) {
       try {
         const ratingImagePath = `./classificacao/${ratingFileName}`;
         const ratingImage = await Jimp.read(ratingImagePath);
 
-        ratingImage.resize(Jimp.AUTO, 60); // Redimensiona para 60px de altura
+        ratingImage.resize(Jimp.AUTO, 60); 
         
         const ratingX = largura - ratingImage.bitmap.width - padding;
         const ratingY = altura - ratingImage.bitmap.height - padding;
@@ -197,7 +203,8 @@ bot.command('capa', async (ctx) => {
         image.composite(ratingImage, ratingX, ratingY);
         
       } catch (err) {
-        console.warn(`Aviso: Não foi possível carregar a imagem ${ratingFileName} da pasta /classificacao/`);
+        // Aviso sem acento
+        console.warn(`Aviso: Nao foi possivel carregar a imagem ${ratingFileName} da pasta /classificacao/`);
       }
     }
 
@@ -206,10 +213,12 @@ bot.command('capa', async (ctx) => {
 
   } catch (err) {
     console.error('Erro ao gerar a imagem:', err);
+    // Erro sem acento
     return ctx.reply('Desculpe, tive um problema ao tentar desenhar a capa.');
   }
 });
 
 
 bot.launch();
-console.log('Bot iniciado e rodando na nuvem (com Mapeamento de Classificação Atualizado)...');
+// Mensagem de log sem acento
+console.log('Bot iniciado e rodando na nuvem (Versao Segura)...');
