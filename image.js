@@ -1,10 +1,9 @@
 // ARQUIVO: image.js
-// (Responsavel por toda a geracao de imagem com Jimp)
 
 const Jimp = require('jimp');
 const path = require('path');
-// Importamos as funcoes do nosso novo arquivo utils.js
-const { traduzirTemporada, getRatingImageName } = require('./utils.js');
+// Importamos SOMENTE a funcao que sobrou
+const { traduzirTemporada } = require('./utils.js');
 
 async function gerarCapa(anime) {
   try {
@@ -73,21 +72,10 @@ async function gerarCapa(anime) {
     
     image.print(fontInfo, padding, altura - padding - Jimp.measureTextHeight(fontInfo, '@AnimesUDK', largura), '@AnimesUDK');
     
-    const ratingFileName = getRatingImageName(anime.ageRating);
-    if (ratingFileName) {
-      try {
-        const ratingImagePath = path.join(__dirname, 'classificacao', ratingFileName);
-        const ratingImage = await Jimp.read(ratingImagePath);
-        ratingImage.resize(Jimp.AUTO, 60);
-        const ratingX = largura - ratingImage.bitmap.width - padding;
-        const ratingY = altura - ratingImage.bitmap.height - padding;
-        image.composite(ratingImage, ratingX, ratingY);
-      } catch (err) {
-        console.warn(`Aviso: Nao foi possivel carregar a imagem ${ratingFileName} da pasta /classificacao/`);
-      }
-    }
+    //
+    // *** O BLOCO DE CODIGO DA CLASSIFICACAO FOI REMOVIDO DAQUI ***
+    //
     
-    // Em vez de retornar para o Telegraf, retornamos o buffer
     const buffer = await image.getBufferAsync(Jimp.MIME_PNG);
     return { success: true, buffer: buffer };
     
