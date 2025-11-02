@@ -1,7 +1,10 @@
-// ARQUIVO: bot.js (Arquivo Principal)
+// ARQUIVO: bot.js (Arquivo Principal - USANDO PACOTE EXTERNO)
 
 require('dotenv').config();
-const { Telegraf, session } = require('telegraf'); // 'session' PRECISA estar aqui
+// MUDANCA: Nao precisamos mais do 'session' daqui
+const { Telegraf } = require('telegraf'); 
+// MUDANCA: Importamos o novo pacote
+const LocalSession = require('telegraf-session-local');
 
 // Importa nossas funcoes da pasta 'src'
 const { buscarAnime } = require('./src/anilist.js');
@@ -18,9 +21,9 @@ if (!BOT_TOKEN) {
 
 const bot = new Telegraf(BOT_TOKEN);
 
-// --- *** A LINHA QUE CORRIGE O ERRO *** ---
-// Ela CRIA o 'ctx.session'. O erro acontece se ela faltar.
-bot.use(session()); 
+// --- *** A NOVA LINHA QUE CORRIGE O ERRO *** ---
+// Usamos o 'LocalSession' em vez do 'session()' antigo
+bot.use(new LocalSession().middleware()); 
 
 // --- REGISTRA OS COMANDOS PRINCIPAIS ---
 
@@ -46,8 +49,7 @@ bot.command('capa', async (ctx) => {
     
     anime.classificacaoManual = null; 
     
-    // *** O PONTO QUE ESTAVA DANDO ERRO ***
-    // Agora 'ctx.session' vai existir por causa do 'bot.use(session())'
+    // Agora 'ctx.session' vai ser criado pelo 'LocalSession'
     ctx.session.animeData = anime; 
     ctx.session.awaitingInput = null; 
     
@@ -60,14 +62,13 @@ bot.command('capa', async (ctx) => {
 });
 
 // --- REGISTRA TODOS OS OUTROS EVENTOS ---
-// (Botoes e respostas de texto da pasta 'src/events.js')
 registerEvents(bot);
 
 
 // --- INICIA O BOT ---
 carregarFontes().then(() => {
   bot.launch();
-  console.log('Bot REATORADO iniciado e rodando (fontes carregadas)...');
+  console.log('Bot REATORADO iniciado e rodando (com LocalSession)...');
 }).catch(err => {
   console.error('Falha ao carregar fontes no inicio!', err);
   process.exit(1);
