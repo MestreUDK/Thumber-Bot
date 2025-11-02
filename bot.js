@@ -1,7 +1,7 @@
 // ARQUIVO: bot.js (Arquivo Principal)
 
 require('dotenv').config();
-const { Telegraf, session } = require('telegraf'); // 'session' precisa ser importada
+const { Telegraf, session } = require('telegraf'); // 'session' PRECISA estar aqui
 
 // Importa nossas funcoes da pasta 'src'
 const { buscarAnime } = require('./src/anilist.js');
@@ -18,8 +18,8 @@ if (!BOT_TOKEN) {
 
 const bot = new Telegraf(BOT_TOKEN);
 
-// --- *** A LINHA MAIS IMPORTANTE PARA CORRIGIR O ERRO *** ---
-// Ela CRIA o 'ctx.session'. Sem ela, o erro acontece.
+// --- *** A LINHA QUE CORRIGE O ERRO *** ---
+// Ela CRIA o 'ctx.session'. O erro acontece se ela faltar.
 bot.use(session()); 
 
 // --- REGISTRA OS COMANDOS PRINCIPAIS ---
