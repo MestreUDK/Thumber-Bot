@@ -3,7 +3,7 @@
 
 const Jimp = require('jimp');
 const path = require('path');
-const { traduzirTemporada } = require('./utils.js');
+const { traduzirTemporada, getRatingImageName } = require('./utils.js');
 
 let fontTitulo, fontInfo, fontTag;
 
