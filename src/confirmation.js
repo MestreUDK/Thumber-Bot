@@ -1,5 +1,5 @@
 // ARQUIVO: src/confirmation.js
-// (Atualizado com botoes de editar imagem)
+// (Atualizado com botoes de MODELO)
 
 const { Markup } = require('telegraf');
 const { traduzirTemporada } = require('./utils.js');
@@ -16,11 +16,14 @@ async function enviarConfirmacao(ctx) {
   const episodios = animeData.episodes || '??';
   const tags = (animeData.genres && animeData.genres.length > 0) ? animeData.genres.join(', ') : 'N/A';
   const classificacao = animeData.classificacaoManual || '(Nenhuma)';
+  // Pega o layout atual
+  const layout = animeData.layout || 'TV'; 
 
   const texto = `
 Confirme os dados (Estes dados serao usados na imagem):
 
 ` + "```" + `
+Layout: ${layout}
 Titulo: ${titulo}
 Estudio: ${estudio}
 Info: ${temporada} - ${episodios} EPISODIOS
@@ -29,9 +32,16 @@ Classificacao: ${classificacao}
 ` + "```" + `
 `;
 
-  // --- *** MUDANCA: NOVOS BOTOES DE IMAGEM *** ---
+  // Prepara os botoes
   const botoes = Markup.inlineKeyboard([
     [ Markup.button.callback('✅ Gerar Capa Agora!', 'generate_final') ],
+    // --- *** NOVA LINHA DE BOTOES DE LAYOUT *** ---
+    [ 
+      Markup.button.callback('Layout: TV', 'set_layout_TV'),
+      Markup.button.callback('Layout: Filme', 'set_layout_FILME'),
+      Markup.button.callback('Layout: ONA', 'set_layout_ONA')
+    ],
+    // Botoes de edicao de texto
     [ 
       Markup.button.callback('Editar Titulo', 'edit_title'),
       Markup.button.callback('Editar Estudio', 'edit_studio')
@@ -40,6 +50,7 @@ Classificacao: ${classificacao}
       Markup.button.callback('Editar Tags', 'edit_tags'),
       Markup.button.callback('Editar Classificacao', 'edit_rating')
     ],
+    // Botoes de edicao de imagem
     [ 
       Markup.button.callback('🖼️ Editar Pôster', 'edit_poster'),
       Markup.button.callback('🌆 Editar Fundo', 'edit_fundo')
