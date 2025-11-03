@@ -1,0 +1,202 @@
+{
+  "DEFAULT": {
+    "text": null,
+    "color": "tag_cinza_claro.png"
+  },
+  "ACTION": {
+    "text": "AÇÃO",
+    "color": "tag_vermelho.png"
+  },
+  "ADVENTURE": {
+    "text": "AVENTURA",
+    "color": "tag_vermelho.png"
+  },
+  "COMEDY": {
+    "text": "COMÉDIA",
+    "color": "tag_laranja.png"
+  },
+  "DRAMA": {
+    "text": "DRAMA",
+    "color": "tag_cinza_escuro.png"
+  },
+  "FANTASY": {
+    "text": "FANTASIA",
+    "color": "tag_ciano.png"
+  },
+  "MAGIC": {
+    "text": "MAGIA",
+    "color": "tag_ciano.png"
+  },
+  "MYSTERY": {
+    "text": "MISTÉRIO",
+    "color": "tag_cinza_escuro.png"
+  },
+  "PSYCHOLOGICAL": {
+    "text": "PSICOLÓGICO",
+    "color": "tag_cinza_escuro.png"
+  },
+  "THRILLER": {
+    "text": "THRILLER",
+    "color": "tag_cinza_escuro.png"
+  },
+  "HORROR": {
+    "text": "TERROR",
+    "color": "tag_vinho.png"
+  },
+  "SUPERNATURAL": {
+    "text": "SOBRENATURAL",
+    "color": "tag_vinho.png"
+  },
+  "ROMANCE": {
+    "text": "ROMANCE",
+    "color": "tag_roxo.png"
+  },
+  "SCI-FI": {
+    "text": "SCI-FI",
+    "color": "tag_azul.png"
+  },
+  "MECHA": {
+    "text": "MECHA",
+    "color": "tag_azul.png"
+  },
+  "SPORTS": {
+    "text": "ESPORTE",
+    "color": "tag_azul.png"
+  },
+  "SLICE OF LIFE": {
+    "text": "SLICE OF LIFE",
+    "color": "tag_verde.png"
+  },
+  "ISEKAI": {
+    "text": "ISEKAI",
+    "color": "tag_verde.png"
+  },
+  "MUSIC": {
+    "text": "MÚSICA",
+    "color": "tag_amarelo.png"
+  },
+  "ECCHI": {
+    "text": "ECCHI",
+    "color": "tag_amarelo.png"
+  },
+  "SHOUNEN": {
+    "text": "SHOUNEN",
+    "color": "tag_laranja.png"
+  },
+  "SEINEN": {
+    "text": "SEINEN",
+    "color": "tag_cinza_escuro.png"
+  },
+  "SHOUJO": {
+    "text": "SHOUJO",
+    "color": "tag_roxo.png"
+  },
+  "HISTORICAL": {
+    "text": "HISTÓRICO",
+    "color": "tag_cinza_claro.png"
+  },
+  "SUPER POWER": {
+    "text": "SUPERPODERES",
+    "color": "tag_vermelho.png"
+  },
+  "MILITARY": {
+    "text": "MILITAR",
+    "color": "tag_azul.png"
+  },
+  "SAMURAI": {
+    "text": "SAMURAI",
+    "color": "tag_cinza_claro.png"
+  },
+  "SCHOOL": {
+    "text": "ESCOLAR",
+    "color": "tag_verde.png"
+  },
+  "GORE": {
+    "text": "GORE",
+    "color": "tag_vinho.png"
+  },
+  "HAREM": {
+    "text": "HARÉM",
+    "color": "tag_roxo.png"
+  },
+  "SURVIVAL": {
+    "text": "SOBREVIVÊNCIA",
+    "color": "tag_cinza_escuro.png"
+  },
+  "AÇÃO": {
+    "text": "AÇÃO",
+    "color": "tag_vermelho.png"
+  },
+  "AVENTURA": {
+    "text": "AVENTURA",
+    "color": "tag_vermelho.png"
+  },
+  "COMÉDIA": {
+    "text": "COMÉDIA",
+    "color": "tag_laranja.png"
+  },
+  "FANTASIA": {
+    "text": "FANTASIA",
+    "color": "tag_ciano.png"
+  },
+  "SCI FI": {
+    "text": "SCI-FI",
+    "color": "tag_azul.png"
+  },
+  "MITOLÓGICO": {
+    "text": "MITOLÓGICO",
+    "color": "tag_ciano.png"
+  },
+  "HISTÓRICO": {
+    "text": "HISTÓRICO",
+    "color": "tag_cinza_claro.png"
+  },
+  "MAHOU SHOUJO": {
+    "text": "MAHOU SHOUJO",
+    "color": "tag_ciano.png"
+  },
+  "SUPERPODERES": {
+    "text": "SUPERPODERES",
+    "color": "tag_vermelho.png"
+  },
+  "MILITAR": {
+    "text": "MILITAR",
+    "color": "tag_azul.png"
+  },
+  "YAOI": {
+    "text": "YAOI",
+    "color": "tag_roxo.png"
+  },
+  "BOYS LOVE": {
+    "text": "BOYS LOVE",
+    "color": "tag_roxo.png"
+  },
+  "MAGIA": {
+    "text": "MAGIA",
+    "color": "tag_ciano.png"
+  },
+  "ESGRIMA": {
+    "text": "ESGRIMA",
+    "color": "tag_azul.png"
+  },
+  "MISTÉRIO": {
+    "text": "MISTÉRIO",
+    "color": "tag_cinza_escuro.png"
+  },
+  "ESCOLAR": {
+    "text": "ESCOLAR",
+    "color": "tag_verde.png"
+  },
+  "PREMIADO": {
+    "text": "PREMIADO",
+    "color": "tag_amarelo.png"
+  },
+  "HAREM": {
+    "text": "HARÉM",
+    "color": "tag_roxo.png"
+  },
+  "SOBREVIVÊNCIA": {
+    "text": "SOBREVIVÊNCIA",
+    "color": "tag_cinza_escuro.png"
+  }
+}
