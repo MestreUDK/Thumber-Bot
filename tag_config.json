@@ -127,21 +127,9 @@
     "text": "MITOLÓGICO",
     "color": "tag_ciano.png"
   },
-  "HISTÓRICO": {
-    "text": "HISTÓRICO",
-    "color": "tag_cinza_claro.png"
-  },
   "MAHOU SHOUJO": {
     "text": "MAHOU SHOUJO",
     "color": "tag_ciano.png"
-  },
-  "SUPERPODERES": {
-    "text": "SUPERPODERES",
-    "color": "tag_vermelho.png"
-  },
-  "MILITAR": {
-    "text": "MILITAR",
-    "color": "tag_azul.png"
   },
   "YAOI": {
     "text": "YAOI",
@@ -151,32 +139,12 @@
     "text": "BOYS LOVE",
     "color": "tag_roxo.png"
   },
-  "MAGIA": {
-    "text": "MAGIA",
-    "color": "tag_ciano.png"
-  },
   "ESGRIMA": {
     "text": "ESGRIMA",
     "color": "tag_azul.png"
   },
-  "MISTÉRIO": {
-    "text": "MISTÉRIO",
-    "color": "tag_cinza_escuro.png"
-  },
-  "ESCOLAR": {
-    "text": "ESCOLAR",
-    "color": "tag_verde.png"
-  },
   "PREMIADO": {
     "text": "PREMIADO",
     "color": "tag_amarelo.png"
-  },
-  "HAREM": {
-    "text": "HARÉM",
-    "color": "tag_roxo.png"
-  },
-  "SOBREVIVÊNCIA": {
-    "text": "SOBREVIVÊNCIA",
-    "color": "tag_cinza_escuro.png"
   }
 }
