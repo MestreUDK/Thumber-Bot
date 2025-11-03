@@ -1,5 +1,5 @@
 // ARQUIVO: src/image.js
-// (CORRIGIDO: Poster PREENCHE a altura total e alinha na direita)
+// (Atualizado: Tags com fundo arredondado e padding correto)
 
 const Jimp = require('jimp');
 const path = require('path');
@@ -37,7 +37,6 @@ async function gerarCapa(anime) {
     const image = new Jimp(largura, altura, '#000000');
     
     // --- 1. Imagem de Fundo (Banner) ---
-    // (O 'anime.bannerImage' pode ter sido editado pelo usuario)
     if (anime.bannerImage) {
       const banner = await Jimp.read(anime.bannerImage);
       banner.cover(largura, altura); // Cobre 1280x720
@@ -45,18 +44,15 @@ async function gerarCapa(anime) {
     }
     
     // --- 2. Overlay (Escurecimento) ---
-    // (O overlay vai por cima do fundo)
     const overlay = new Jimp(largura, altura, '#000000');
     overlay.opacity(0.6);
     image.composite(overlay, 0, 0);
     
     // --- 3. Imagem do Poster (Cover) ---
-    // (O poster vai por cima do overlay)
     let posterWidth = 0; // Vamos guardar a largura do poster
     if (anime.coverImage && anime.coverImage.large) {
       const cover = await Jimp.read(anime.coverImage.large);
       
-      // --- *** A MUDANCA CORRETA *** ---
       // Redimensiona o poster para PREENCHER a altura total (720px)
       cover.resize(Jimp.AUTO, altura); 
       
@@ -70,7 +66,6 @@ async function gerarCapa(anime) {
     }
     
     // --- 4. Textos ---
-    // A area de texto agora respeita o poster
     const textoAreaLargura = largura - posterWidth - (padding * 2);
 
     let currentTextY = padding;
@@ -89,28 +84,54 @@ async function gerarCapa(anime) {
     image.print(fontTitulo, padding, currentTextY, estudio, textoAreaLargura); 
     currentTextY += Jimp.measureTextHeight(fontTitulo, estudio, textoAreaLargura) + 20;
     
+    
+    // --- *** 5. TAGS DE GENERO (COM BORDAS ARREDONDADAS) *** ---
     let currentTagX = padding;
     let currentTagY = currentTextY;
-    const tagHeight = 30;
-    const tagPaddingHorizontal = 10;
-    const tagPaddingVertical = 5;
+    
+    // Ajustes de design para as tags
+    const tagHeight = 35; // Altura da tag
+    const tagPaddingHorizontal = 15; // Espaço nas laterais do texto
+    const tagPaddingVertical = 5; // Espaço em cima/baixo do texto
+    const tagBorderRadius = 10; // O arredondamento das bordas
+    const tagColor = 0xFFBB00FF; // Laranja (com transparencia FF no final)
+
     const generos = anime.genres || [];
     
-    for (const genero of generos.slice(0, 4)) {
+    for (const genero of generos.slice(0, 4)) { // Pega so os 4 primeiros
       const genreText = genero.toUpperCase();
       const textWidth = Jimp.measureText(fontTag, genreText);
-      const tagWidth = textWidth + (tagPaddingHorizontal * 2);
+      const tagWidth = textWidth + (tagPaddingHorizontal * 2); // Largura total da tag
 
+      // Se a tag nao couber na linha, pula para a proxima
       if (currentTagX + tagWidth > textoAreaLargura + padding) {
         currentTagX = padding;
-        currentTagY += tagHeight + 10;
+        currentTagY += tagHeight + 15; // Espaco entre as linhas de tags
       }
       
-      const tagBg = new Jimp(tagWidth, tagHeight, '#FFA500');
-      image.composite(tagBg, currentTagX, currentTagY);
-      image.print(fontTag, currentTagX + tagPaddingHorizontal, currentTagY + 2, genreText);
-      currentTagX += tagWidth + 10;
+      // Cria o fundo arredondado
+      const tagBackground = new Jimp(tagWidth, tagHeight, tagColor);
+      tagBackground.round(tagBorderRadius); // Arredonda as bordas
+
+      // Cola o fundo na imagem principal
+      image.composite(tagBackground, currentTagX, currentTagY);
+
+      // Calcula a posicao Y do texto para centraliza-lo
+      const textY = currentTagY + (tagHeight - Jimp.measureTextHeight(fontTag, genreText, tagWidth)) / 2;
+      
+      // Escreve o texto da tag por cima do fundo
+      image.print(
+        fontTag, 
+        currentTagX + tagPaddingHorizontal, 
+        textY, 
+        genreText
+      );
+      
+      // Move o X para a proxima tag
+      currentTagX += tagWidth + 10; // 10px de espaco entre tags
     }
+    // --- *** FIM DO BLOCO DAS TAGS *** ---
+    
     
     // Bloco da logo (Desativado)
     /* ... */
