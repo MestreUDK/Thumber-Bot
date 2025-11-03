@@ -123,26 +123,6 @@
     "text": "SOBREVIVÊNCIA",
     "color": "tag_cinza_escuro.png"
   },
-  "AÇÃO": {
-    "text": "AÇÃO",
-    "color": "tag_vermelho.png"
-  },
-  "AVENTURA": {
-    "text": "AVENTURA",
-    "color": "tag_vermelho.png"
-  },
-  "COMÉDIA": {
-    "text": "COMÉDIA",
-    "color": "tag_laranja.png"
-  },
-  "FANTASIA": {
-    "text": "FANTASIA",
-    "color": "tag_ciano.png"
-  },
-  "SCI FI": {
-    "text": "SCI-FI",
-    "color": "tag_azul.png"
-  },
   "MITOLÓGICO": {
     "text": "MITOLÓGICO",
     "color": "tag_ciano.png"
