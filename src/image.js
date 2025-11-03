@@ -1,5 +1,5 @@
 // ARQUIVO: src/image.js
-// (Atualizado: Tags com fundo arredondado e padding correto)
+// (CORRIGIDO: Corrigido o erro 'tagBackground.round is not a function')
 
 const Jimp = require('jimp');
 const path = require('path');
@@ -85,36 +85,37 @@ async function gerarCapa(anime) {
     currentTextY += Jimp.measureTextHeight(fontTitulo, estudio, textoAreaLargura) + 20;
     
     
-    // --- *** 5. TAGS DE GENERO (COM BORDAS ARREDONDADAS) *** ---
+    // --- 5. TAGS DE GENERO (COM BORDAS ARREDONDADAS) ---
     let currentTagX = padding;
     let currentTagY = currentTextY;
     
-    // Ajustes de design para as tags
-    const tagHeight = 35; // Altura da tag
-    const tagPaddingHorizontal = 15; // Espaço nas laterais do texto
-    const tagPaddingVertical = 5; // Espaço em cima/baixo do texto
-    const tagBorderRadius = 10; // O arredondamento das bordas
-    const tagColor = 0xFFBB00FF; // Laranja (com transparencia FF no final)
+    const tagHeight = 35;
+    const tagPaddingHorizontal = 15;
+    const tagPaddingVertical = 5;
+    const tagBorderRadius = 10;
+    const tagColor = 0xFFBB00FF; // Laranja
 
     const generos = anime.genres || [];
     
-    for (const genero of generos.slice(0, 4)) { // Pega so os 4 primeiros
+    for (const genero of generos.slice(0, 4)) {
       const genreText = genero.toUpperCase();
       const textWidth = Jimp.measureText(fontTag, genreText);
-      const tagWidth = textWidth + (tagPaddingHorizontal * 2); // Largura total da tag
+      const tagWidth = textWidth + (tagPaddingHorizontal * 2);
 
-      // Se a tag nao couber na linha, pula para a proxima
       if (currentTagX + tagWidth > textoAreaLargura + padding) {
         currentTagX = padding;
-        currentTagY += tagHeight + 15; // Espaco entre as linhas de tags
+        currentTagY += tagHeight + 15;
       }
       
-      // Cria o fundo arredondado
-      const tagBackground = new Jimp(tagWidth, tagHeight, tagColor);
-      tagBackground.round(tagBorderRadius); // Arredonda as bordas
-
-      // Cola o fundo na imagem principal
-      image.composite(tagBackground, currentTagX, currentTagY);
+      // --- *** A CORRECAO ESTA AQUI *** ---
+      // (Eu juntei as 3 linhas erradas em 1 linha correta)
+      // Cria o fundo arredondado E cola na imagem principal
+      image.composite(
+        new Jimp(tagWidth, tagHeight, tagColor).round(tagBorderRadius), 
+        currentTagX, 
+        currentTagY
+      );
+      // --- *** FIM DA CORRECAO *** ---
 
       // Calcula a posicao Y do texto para centraliza-lo
       const textY = currentTagY + (tagHeight - Jimp.measureTextHeight(fontTag, genreText, tagWidth)) / 2;
@@ -127,10 +128,8 @@ async function gerarCapa(anime) {
         genreText
       );
       
-      // Move o X para a proxima tag
-      currentTagX += tagWidth + 10; // 10px de espaco entre tags
+      currentTagX += tagWidth + 10;
     }
-    // --- *** FIM DO BLOCO DAS TAGS *** ---
     
     
     // Bloco da logo (Desativado)
