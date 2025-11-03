@@ -1,9 +1,8 @@
 // ARQUIVO: src/models/filme.js
-// (CORRIGIDO: Importando o modulo 'poster' corretamente)
+// (CORRIGIDO: Titulo alinhado ao TOPO-ESQUERDA, como no desenho)
 
 const Jimp = require('jimp');
-// --- *** A CORRECAO ESTA AQUI *** ---
-const { drawPoster } = require('../drawing/poster.js');
+const { drawPoster } = require('../drawing/poster.js'); 
 
 async function draw(image, anime, fonts, consts) {
   const { largura, altura, padding } = consts;
@@ -19,11 +18,16 @@ async function draw(image, anime, fonts, consts) {
   const titulo = anime.title.romaji || anime.title.english || "Titulo Desconhecido";
   
   // 4. Desenha o Titulo
+  // --- *** MUDANCA: Alinhamento vertical no TOPO *** ---
   image.print(
     fontFilme,
-    padding, 
-    0,       
-    titulo,
+    padding, // X
+    padding, // Y (com o mesmo padding do topo)
+    {
+      text: titulo,
+      alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT,
+      alignmentY: Jimp.VERTICAL_ALIGN_TOP // Alinha no TOPO
+    },
     textoAreaLargura, 
     altura          
   );
