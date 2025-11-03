@@ -1,4 +1,5 @@
-// ARQUIVO: bot.js (Arquivo Principal - Com Mensagens Atualizadas)
+// ARQUIVO: bot.js (Arquivo Principal - Com Whitelist)
+// (Atualizado para definir o layout padrao)
 
 require('dotenv').config();
 const { Telegraf } = require('telegraf'); 
@@ -23,29 +24,8 @@ bot.use(new LocalSession().middleware());
 
 // --- REGISTRA OS COMANDOS PRINCIPAIS ---
 
-// --- *** ATUALIZADO: Comando /start *** ---
-bot.start((ctx) => {
-  const userId = String(ctx.from.id);
-  const username = ctx.from.username || 'N/A';
-  const adminId = process.env.ADMIN_ID;
+bot.start((ctx) => { /* ... (sem mudancas) ... */ });
 
-  if (userId === String(adminId)) {
-    // 1. Mensagem para o Admin
-    ctx.reply('Ola Mestre! Eu sou o bot gerador de capas. Seus comandos estao prontos.');
-  } else if (allowedIds.has(userId)) {
-    // --- *** MUDANCA 1 AQUI *** ---
-    // 2. Mensagem para a Whitelist
-    ctx.reply('Olá, seja bem-vindo amigo do Mestre, você tem permissão de usar o bot');
-  } else {
-    // --- *** MUDANCA 2 AQUI *** ---
-    // 3. Mensagem para Estranhos
-    console.log(`[LOG] Novo usuario tentou iniciar: ID=${userId}, Nome=${username}`);
-    // Removemos a parte "(Informe este ID para o administrador)"
-    ctx.reply(`Desculpe, este e um bot privado.\n\nSeu ID de usuario e: ${userId}`);
-  }
-});
-
-// --- *** ATUALIZADO: Comando /capa *** ---
 bot.command('capa', checkPermission, async (ctx) => {
   try {
     const nomeDoAnime = ctx.message.text.replace('/capa', '').trim();
@@ -62,6 +42,19 @@ bot.command('capa', checkPermission, async (ctx) => {
     
     const anime = resultadoApi.data;
     anime.classificacaoManual = null; 
+    
+    // --- *** MUDANCA: Define o Layout Padrao *** ---
+    // (A API do AniList nos da o formato)
+    const formato = anime.format ? String(anime.format).toUpperCase() : 'TV';
+    if (formato === 'MOVIE') {
+        anime.layout = 'FILME';
+    } else if (formato === 'ONA') {
+        anime.layout = 'ONA';
+    } else {
+        anime.layout = 'TV';
+    }
+    // --- FIM DA MUDANCA ---
+    
     ctx.session.animeData = anime; 
     ctx.session.awaitingInput = null; 
     
@@ -80,7 +73,7 @@ registerEvents(bot, checkPermission);
 // --- INICIA O BOT ---
 carregarFontes().then(() => {
   bot.launch();
-  console.log('Bot REATORADO iniciado e rodando (com Seguranca de Whitelist)...');
+  console.log('Bot REATORADO iniciado e rodando (com Modelos)...');
 }).catch(err => {
   console.error('Falha ao carregar fontes no inicio!', err);
   process.exit(1);
