@@ -1,5 +1,4 @@
-// ARQUIVO: bot.js (Arquivo Principal - Com Whitelist)
-// (Atualizado para definir o layout padrao)
+// ARQUIVO: bot.js (Arquivo Principal - Com Fluxo de Etapas)
 
 require('dotenv').config();
 const { Telegraf } = require('telegraf'); 
@@ -8,7 +7,8 @@ const LocalSession = require('telegraf-session-local');
 // Importa nossas funcoes da pasta 'src'
 const { buscarAnime } = require('./src/anilist.js');
 const { carregarFontes } = require('./src/image.js'); 
-const { enviarConfirmacao } = require('./src/confirmation.js');
+// ATUALIZADO: Importa os dois menus
+const { enviarMenuLayout } = require('./src/confirmation.js'); 
 const { registerEvents } = require('./src/events.js');
 const { checkPermission, allowedIds } = require('./src/security.js');
 
@@ -24,8 +24,9 @@ bot.use(new LocalSession().middleware());
 
 // --- REGISTRA OS COMANDOS PRINCIPAIS ---
 
-bot.start((ctx) => { /* ... (sem mudancas) ... */ });
+bot.start((ctx) => { /* ... (NENHUMA MUDANCA AQUI) ... */ });
 
+// --- *** ATUALIZADO: Comando /capa *** ---
 bot.command('capa', checkPermission, async (ctx) => {
   try {
     const nomeDoAnime = ctx.message.text.replace('/capa', '').trim();
@@ -43,8 +44,7 @@ bot.command('capa', checkPermission, async (ctx) => {
     const anime = resultadoApi.data;
     anime.classificacaoManual = null; 
     
-    // --- *** MUDANCA: Define o Layout Padrao *** ---
-    // (A API do AniList nos da o formato)
+    // --- Define o Layout Padrao baseado na API ---
     const formato = anime.format ? String(anime.format).toUpperCase() : 'TV';
     if (formato === 'MOVIE') {
         anime.layout = 'FILME';
@@ -53,12 +53,12 @@ bot.command('capa', checkPermission, async (ctx) => {
     } else {
         anime.layout = 'TV';
     }
-    // --- FIM DA MUDANCA ---
     
     ctx.session.animeData = anime; 
-    ctx.session.awaitingInput = null; 
     
-    await enviarConfirmacao(ctx);
+    // --- *** MUDANCA: Define o estado e chama o MENU DE LAYOUT *** ---
+    ctx.session.state = 'layout_select'; // Define o estado
+    await enviarMenuLayout(ctx); // Chama a primeira etapa
 
   } catch (err) {
     console.error('ERRO CRITICO NO COMANDO /CAPA:', err);
@@ -73,7 +73,7 @@ registerEvents(bot, checkPermission);
 // --- INICIA O BOT ---
 carregarFontes().then(() => {
   bot.launch();
-  console.log('Bot REATORADO iniciado e rodando (com Modelos)...');
+  console.log('Bot REATORADO iniciado e rodando (com Fluxo de Etapas)...');
 }).catch(err => {
   console.error('Falha ao carregar fontes no inicio!', err);
   process.exit(1);
