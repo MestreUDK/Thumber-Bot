@@ -1,8 +1,10 @@
 // ARQUIVO: src/models/filme.js
-// (CORRIGIDO: Titulo 100% centralizado na area preta)
+// (CORRIGIDO: Agora importa e desenha a Classificacao)
 
 const Jimp = require('jimp');
+// --- *** 1. IMPORTAR A FUNCAO QUE FALTA *** ---
 const { drawPoster } = require('../drawing/poster.js'); 
+const { drawClassification } = require('../drawing/classification.js'); // <--- ADICIONADO
 
 async function draw(image, anime, fonts, consts) {
   const { largura, altura, padding } = consts;
@@ -20,19 +22,22 @@ async function draw(image, anime, fonts, consts) {
   const titulo = anime.title.romaji || anime.title.english || "Titulo Desconhecido";
 
   // 4. Desenha o Titulo
-  // --- *** A MUDANCA ESTA AQUI *** ---
   image.print(
     fontFilme,
     textoAreaX, // X (Onde a area de texto comeca)
     0,          // Y (Topo da imagem)
     {
       text: titulo,
-      alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER, // <--- CORRIGIDO
-      alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE  // (Ja estava correto)
+      alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER, 
+      alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
     },
     textoAreaLargura, // Max Largura
     altura          // Max Altura
   );
+  
+  // --- *** 5. CHAMAR A FUNCAO QUE FALTA *** ---
+  // (Desenha a classificacao no canto inferior esquerdo)
+  await drawClassification(image, anime, padding, altura); // <--- ADICIONADO
 }
 
 module.exports = { draw };
