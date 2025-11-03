@@ -1,14 +1,15 @@
-
 // ARQUIVO: src/events.js
-// (Atualizado para lidar com UPLOAD DE FOTOS)
+// (Atualizado para usar 'checkPermission')
 
 const { gerarCapa } = require('./image.js');
 const { enviarConfirmacao } = require('./confirmation.js');
 
-function registerEvents(bot) {
+// Funcao principal agora recebe 'checkPermission'
+function registerEvents(bot, checkPermission) {
 
   // Botao [Gerar Capa Agora!]
-  bot.action('generate_final', async (ctx) => {
+  // Adicionamos 'checkPermission'
+  bot.action('generate_final', checkPermission, async (ctx) => {
     try {
       await ctx.deleteMessage(); 
       await ctx.reply('Gerando sua capa com os dados editados...');
@@ -33,14 +34,14 @@ function registerEvents(bot) {
   });
 
   // Botao [Cancelar]
-  bot.action('cancel_edit', async (ctx) => {
+  bot.action('cancel_edit', checkPermission, async (ctx) => {
     ctx.session = null;
     await ctx.deleteMessage();
     await ctx.reply('Geracao cancelada.');
   });
 
   // Botoes de Edicao (Texto e Imagem)
-  bot.action(['edit_title', 'edit_studio', 'edit_tags', 'edit_rating', 'edit_poster', 'edit_fundo'], async (ctx) => {
+  bot.action(['edit_title', 'edit_studio', 'edit_tags', 'edit_rating', 'edit_poster', 'edit_fundo'], checkPermission, async (ctx) => {
     try {
       const acao = ctx.match[0];
       ctx.session.awaitingInput = acao; 
@@ -50,8 +51,6 @@ function registerEvents(bot) {
       if (acao === 'edit_studio') pergunta = 'Digite o novo **Estudio**';
       if (acao === 'edit_tags') pergunta = 'Digite as novas **Tags** (separadas por virgula)';
       if (acao === 'edit_rating') pergunta = 'Digite a **Classificacao** (ex: 16)';
-      
-      // --- *** MUDANCA: Mensagem para pedir link OU UPLOAD *** ---
       if (acao === 'edit_poster') pergunta = 'Envie o **link (URL)** OU faça o **UPLOAD** da nova imagem do Pôster';
       if (acao === 'edit_fundo') pergunta = 'Envie o **link (URL)** OU faça o **UPLOAD** da nova imagem de Fundo';
       
@@ -63,32 +62,39 @@ function registerEvents(bot) {
 
 
   // OUVIR AS RESPOSTAS DE TEXTO (EDICAO)
-  bot.on('text', async (ctx) => {
+  bot.on('text', checkPermission, async (ctx) => {
     try {
-      if (!ctx.session || !ctx.session.awaitingInput || !ctx.session.animeData) {
+      // Se for um comando (ex: /start), ignora. Deixa o 'bot.command' cuidar.
+      if (ctx.message.text.startsWith('/')) {
         return;
+      }
+      
+      if (!ctx.session || !ctx.session.awaitingInput || !ctx.session.animeData) {
+        return ctx.reply('Nao entendi. Se quiser editar, clique em um botao primeiro.');
       }
 
       const state = ctx.session.awaitingInput;
       const animeData = ctx.session.animeData;
       const userInput = ctx.message.text.trim();
 
-      // Se o usuario mandar texto para uma edicao de imagem (um link)
+      if (state === 'edit_title') {
+        animeData.title.romaji = userInput;
+      }
+      if (state === 'edit_studio') {
+        animeData.studios.nodes = [{ name: userInput }]; 
+      }
+      if (state === 'edit_tags') {
+        animeData.genres = userInput.split(',').map(tag => tag.trim());
+      }
+      if (state === 'edit_rating') {
+        animeData.classificacaoManual = userInput;
+      }
       if (state === 'edit_poster') {
         if (!animeData.coverImage) animeData.coverImage = {};
         animeData.coverImage.large = userInput;
-      } else if (state === 'edit_fundo') {
-        animeData.bannerImage = userInput;
       }
-      // Edicao de texto normal
-      else if (state === 'edit_title') {
-        animeData.title.romaji = userInput;
-      } else if (state === 'edit_studio') {
-        animeData.studios.nodes = [{ name: userInput }]; 
-      } else if (state === 'edit_tags') {
-        animeData.genres = userInput.split(',').map(tag => tag.trim());
-      } else if (state === 'edit_rating') {
-        animeData.classificacaoManual = userInput;
+      if (state === 'edit_fundo') {
+        animeData.bannerImage = userInput;
       }
 
       ctx.session.awaitingInput = null;
@@ -103,25 +109,21 @@ function registerEvents(bot) {
     }
   });
 
-  // --- *** NOVO: OUVIR AS RESPOSTAS DE FOTO (UPLOAD) *** ---
-  bot.on('photo', async (ctx) => {
+  // OUVIR AS RESPOSTAS DE FOTO (UPLOAD)
+  bot.on('photo', checkPermission, async (ctx) => {
     try {
-      // Verifica se o bot esta esperando uma foto
       if (!ctx.session || !ctx.session.awaitingInput || !ctx.session.animeData) {
-        return; // Nao esta esperando, ignora a foto
+        return; 
       }
       
       const state = ctx.session.awaitingInput;
       const animeData = ctx.session.animeData;
       
-      // Verifica se esta esperando um poster ou fundo
       if (state !== 'edit_poster' && state !== 'edit_fundo') {
-        return; // Esta esperando texto, mas recebeu foto. Ignora.
+        return;
       }
       
-      // Pega a foto que o usuario enviou (a de melhor qualidade)
       const photo = ctx.message.photo.pop();
-      // Pega o link interno do Telegram para essa foto
       const fileLink = await ctx.telegram.getFileLink(photo.file_id);
       const imageUrl = fileLink.href;
       
@@ -138,7 +140,7 @@ function registerEvents(bot) {
       
       ctx.session.awaitingInput = null;
       ctx.session.animeData = animeData;
-      await enviarConfirmacao(ctx); // Mostra os botoes de novo
+      await enviarConfirmacao(ctx);
       
     } catch (err) {
       console.error('ERRO AO PROCESSAR FOTO:', err);
