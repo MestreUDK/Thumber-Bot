@@ -1,5 +1,5 @@
 // ARQUIVO: src/drawing/tags.js
-// (ATUALIZADO: Le o 'tag_config.json' e usa os moldes .png)
+// (CORRIGIDO: Troca .round() por .radius(), O ERRO ESTAVA AQUI)
 
 const Jimp = require('jimp');
 const fs = require('fs');
@@ -8,12 +8,10 @@ const path = require('path');
 // --- 1. Carrega o Dicionario de Tags (o tag_config.json) ---
 let tagConfig;
 try {
-  // Sobe 2 niveis (de src/drawing para a raiz) e acha o config
   const configPath = path.join(__dirname, '..', '..', 'tag_config.json');
   tagConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 } catch (err) {
   console.error('ERRO FATAL: Nao foi possivel ler o tag_config.json!', err);
-  // Se falhar, cria um config de fallback para o bot nao quebrar
   tagConfig = { "DEFAULT": { "text": null, "color": "tag_cinza_claro.png" } };
 }
 
@@ -21,7 +19,6 @@ try {
 const tagMolds = {};
 
 async function getTagMold(moldName) {
-  // Se ja carregamos 'tag_laranja.png', nao carrega de novo
   if (tagMolds[moldName]) {
     return tagMolds[moldName];
   }
@@ -54,9 +51,8 @@ async function drawTags(image, anime, fonts, padding, textAreaWidth, currentText
     const config = tagConfig[generoUpper] || tagConfig["DEFAULT"];
     
     // Pega o texto (traduzido ou o original)
-    const genreText = config.text || generoUpper; 
+    const genreText = (config.text || generoUpper).toUpperCase(); 
     
-    // Pega o nome do arquivo de cor (ex: 'tag_vermelho.png')
     const moldName = config.color;
 
     const textWidth = Jimp.measureText(fontTag, genreText);
@@ -67,7 +63,6 @@ async function drawTags(image, anime, fonts, padding, textAreaWidth, currentText
       currentTagY += tagHeight + 15;
     }
     
-    // --- *** A NOVA MAGICA *** ---
     const tagMold = await getTagMold(moldName);
     
     if (tagMold) {
@@ -77,8 +72,13 @@ async function drawTags(image, anime, fonts, padding, textAreaWidth, currentText
         currentTagX, 
         currentTagY
       );
+    } else {
+      // Fallback se o molde (ex: tag_laranja.png) nao for encontrado
+      // --- *** CORRECAO DO BUG: .radius() no lugar de .round() *** ---
+      const tagFallback = new Jimp(tagWidth, tagHeight, 0xFFBB00FF);
+      await tagFallback.radius(10); // <--- AQUI ESTAVA O ERRO
+      image.composite(tagFallback, currentTagX, currentTagY);
     }
-    // --- *** FIM DA MAGICA *** ---
 
     const textY = currentTagY + (tagHeight - Jimp.measureTextHeight(fontTag, genreText, tagWidth)) / 2;
     
