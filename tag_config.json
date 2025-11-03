@@ -123,7 +123,7 @@
     "text": "SOBREVIVÊNCIA",
     "color": "tag_cinza_escuro.png"
   },
-  "Mythology": {
+  "MYTHOLOGY": {
     "text": "MITOLÓGICO",
     "color": "tag_ciano.png"
   },
@@ -133,6 +133,10 @@
   },
   "YAOI": {
     "text": "YAOI",
+    "color": "tag_roxo.png"
+  },
+  "YURI": {
+    "text": "YURI",
     "color": "tag_roxo.png"
   },
   "BOYS LOVE": {
