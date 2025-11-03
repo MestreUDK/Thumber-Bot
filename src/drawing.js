@@ -1,5 +1,5 @@
 // ARQUIVO: src/drawing.js
-// (O "Artista" - Contem toda a logica de desenho do Jimp)
+// (CORRIGIDO: A forma correta de usar o .round())
 
 const Jimp = require('jimp');
 const path = require('path');
@@ -9,7 +9,7 @@ const { traduzirTemporada, getRatingImageName } = require('./utils.js');
 async function drawBackground(image, bannerUrl, width, height) {
   if (bannerUrl) {
     const banner = await Jimp.read(bannerUrl);
-    banner.cover(width, height); // Cobre 1280x720
+    banner.cover(width, height);
     image.composite(banner, 0, 0);
   }
   
@@ -21,22 +21,20 @@ async function drawBackground(image, bannerUrl, width, height) {
 // --- 2. Desenha o Poster (e retorna a largura dele) ---
 async function drawPoster(image, posterUrl, width, height, padding) {
   if (!posterUrl) {
-    return 0; // Retorna 0 de largura se nao ha poster
+    return 0;
   }
   
   const cover = await Jimp.read(posterUrl);
-  // Redimensiona o poster para PREENCHER a altura total (720px)
   cover.resize(Jimp.AUTO, height); 
   
-  const posterWidth = cover.bitmap.width; // Salva a largura
+  const posterWidth = cover.bitmap.width; 
   
-  // Alinha na direita (X) e no topo (Y)
   const coverX = width - posterWidth;
   const coverY = 0; 
   
   image.composite(cover, coverX, coverY);
   
-  return posterWidth; // Retorna a largura para o texto saber o limite
+  return posterWidth; 
 }
 
 // --- 3. Desenha os Textos Principais (e retorna a proxima altura Y) ---
@@ -59,13 +57,14 @@ async function drawText(image, anime, fonts, padding, textAreaWidth) {
   image.print(fontTitulo, padding, currentTextY, estudio, textAreaWidth); 
   currentTextY += Jimp.measureTextHeight(fontTitulo, estudio, textAreaWidth) + 20;
   
-  return currentTextY; // Retorna onde o proximo item deve comecar
+  return currentTextY;
 }
 
 // --- 4. Desenha as Tags de Genero ---
 async function drawTags(image, anime, fonts, padding, textAreaWidth, currentTextY) {
   const { fontTag } = fonts;
   let currentTagX = padding;
+  let currentTagY = currentTextY;
   
   const tagHeight = 35;
   const tagPaddingHorizontal = 15;
@@ -80,19 +79,32 @@ async function drawTags(image, anime, fonts, padding, textAreaWidth, currentText
 
     if (currentTagX + tagWidth > textAreaWidth + padding) {
       currentTagX = padding;
-      currentTextY += tagHeight + 15;
+      currentTagY += tagHeight + 15;
     }
     
-    // Cria o fundo arredondado
-    image.composite(
-      new Jimp(tagWidth, tagHeight, tagColor).round(tagBorderRadius), 
-      currentTagX, 
-      currentTextY
-    );
-
-    const textY = currentTextY + (tagHeight - Jimp.measureTextHeight(fontTag, genreText, tagWidth)) / 2;
+    // --- *** A CORRECAO ESTA AQUI *** ---
+    // (Separamos em 3 linhas, que e o jeito 100% seguro)
     
-    image.print(fontTag, currentTagX + tagPaddingHorizontal, textY, genreText);
+    // 1. Cria a imagem do fundo
+    const tagBackground = new Jimp(tagWidth, tagHeight, tagColor); 
+    // 2. Arredonda ela
+    tagBackground.round(tagBorderRadius); 
+    // 3. Cola ela na imagem principal
+    image.composite(tagBackground, currentTagX, currentTagY); 
+    
+    // --- *** FIM DA CORRECAO *** ---
+
+    // Calcula a posicao Y do texto para centraliza-lo
+    const textY = currentTagY + (tagHeight - Jimp.measureTextHeight(fontTag, genreText, tagWidth)) / 2;
+    
+    // Escreve o texto da tag por cima do fundo
+    image.print(
+      fontTag, 
+      currentTagX + tagPaddingHorizontal, 
+      textY, 
+      genreText
+    );
+    
     currentTagX += tagWidth + 10;
   }
 }
@@ -100,7 +112,7 @@ async function drawTags(image, anime, fonts, padding, textAreaWidth, currentText
 // --- 5. Desenha a Classificacao ---
 async function drawClassification(image, anime, padding, height) {
   if (!anime.classificacaoManual) {
-    return; // Nao faz nada se nao houver classificacao
+    return;
   }
   
   const ratingFileName = getRatingImageName(anime.classificacaoManual);
