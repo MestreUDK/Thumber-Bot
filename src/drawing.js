@@ -1,5 +1,5 @@
 // ARQUIVO: src/drawing.js
-// (CORRIGIDO: A forma correta de usar o .round())
+// (CORRIGIDO: Adicionado 'await' na funcao .round())
 
 const Jimp = require('jimp');
 const path = require('path');
@@ -83,12 +83,11 @@ async function drawTags(image, anime, fonts, padding, textAreaWidth, currentText
     }
     
     // --- *** A CORRECAO ESTA AQUI *** ---
-    // (Separamos em 3 linhas, que e o jeito 100% seguro)
     
     // 1. Cria a imagem do fundo
     const tagBackground = new Jimp(tagWidth, tagHeight, tagColor); 
-    // 2. Arredonda ela
-    tagBackground.round(tagBorderRadius); 
+    // 2. Arredonda ela (e AGUARDA a conclusao)
+    await tagBackground.round(tagBorderRadius); 
     // 3. Cola ela na imagem principal
     image.composite(tagBackground, currentTagX, currentTagY); 
     
@@ -97,7 +96,6 @@ async function drawTags(image, anime, fonts, padding, textAreaWidth, currentText
     // Calcula a posicao Y do texto para centraliza-lo
     const textY = currentTagY + (tagHeight - Jimp.measureTextHeight(fontTag, genreText, tagWidth)) / 2;
     
-    // Escreve o texto da tag por cima do fundo
     image.print(
       fontTag, 
       currentTagX + tagPaddingHorizontal, 
