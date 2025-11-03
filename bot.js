@@ -1,4 +1,4 @@
-// ARQUIVO: bot.js (Arquivo Principal - Com Whitelist)
+// ARQUIVO: bot.js (Arquivo Principal - Com Mensagens Atualizadas)
 
 require('dotenv').config();
 const { Telegraf } = require('telegraf'); 
@@ -9,7 +9,6 @@ const { buscarAnime } = require('./src/anilist.js');
 const { carregarFontes } = require('./src/image.js'); 
 const { enviarConfirmacao } = require('./src/confirmation.js');
 const { registerEvents } = require('./src/events.js');
-// --- *** NOVO: Importa o modulo de seguranca *** ---
 const { checkPermission, allowedIds } = require('./src/security.js');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -25,7 +24,6 @@ bot.use(new LocalSession().middleware());
 // --- REGISTRA OS COMANDOS PRINCIPAIS ---
 
 // --- *** ATUALIZADO: Comando /start *** ---
-// (Agora reconhece Admin, Whitelist e Estranhos)
 bot.start((ctx) => {
   const userId = String(ctx.from.id);
   const username = ctx.from.username || 'N/A';
@@ -35,17 +33,19 @@ bot.start((ctx) => {
     // 1. Mensagem para o Admin
     ctx.reply('Ola Mestre! Eu sou o bot gerador de capas. Seus comandos estao prontos.');
   } else if (allowedIds.has(userId)) {
+    // --- *** MUDANCA 1 AQUI *** ---
     // 2. Mensagem para a Whitelist
-    ctx.reply('Ola! Voce esta na lista de permissao. Bem-vindo(a) ao bot!\nEnvie /capa [nome do anime] para comecar.');
+    ctx.reply('Olá, seja bem-vindo amigo do Mestre, você tem permissão de usar o bot');
   } else {
+    // --- *** MUDANCA 2 AQUI *** ---
     // 3. Mensagem para Estranhos
     console.log(`[LOG] Novo usuario tentou iniciar: ID=${userId}, Nome=${username}`);
-    ctx.reply(`Desculpe, este e um bot privado.\n\nSeu ID de usuario e: ${userId}\n(Informe este ID para o administrador)`);
+    // Removemos a parte "(Informe este ID para o administrador)"
+    ctx.reply(`Desculpe, este e um bot privado.\n\nSeu ID de usuario e: ${userId}`);
   }
 });
 
 // --- *** ATUALIZADO: Comando /capa *** ---
-// (Adicionamos o 'checkPermission' para proteger o comando)
 bot.command('capa', checkPermission, async (ctx) => {
   try {
     const nomeDoAnime = ctx.message.text.replace('/capa', '').trim();
@@ -74,7 +74,6 @@ bot.command('capa', checkPermission, async (ctx) => {
 });
 
 // --- REGISTRA TODOS OS OUTROS EVENTOS ---
-// (Passamos o 'checkPermission' para proteger botoes e uploads)
 registerEvents(bot, checkPermission);
 
 
