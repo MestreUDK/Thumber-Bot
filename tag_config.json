@@ -127,6 +127,10 @@
     "text": "MITOLÓGICO",
     "color": "tag_ciano.png"
   },
+  "CHILDCARE": {
+    "text": "PUERICULTURA",
+    "color": "tag_ciano.png"
+  },
   "MAHOU SHOUJO": {
     "text": "MAHOU SHOUJO",
     "color": "tag_ciano.png"
@@ -147,7 +151,7 @@
     "text": "ESGRIMA",
     "color": "tag_azul.png"
   },
-  "PREMIADO": {
+  "AWARD_WINNING": {
     "text": "PREMIADO",
     "color": "tag_amarelo.png"
   }
