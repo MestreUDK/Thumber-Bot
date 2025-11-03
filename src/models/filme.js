@@ -1,12 +1,13 @@
 // ARQUIVO: src/models/filme.js
-// (Modelo para Filme - Fundo preto, poster e titulo grande)
+// (CORRIGIDO: Importando o modulo 'poster' corretamente)
 
 const Jimp = require('jimp');
-const { drawPoster } = require('../drawing');
+// --- *** A CORRECAO ESTA AQUI *** ---
+const { drawPoster } = require('../drawing/poster.js');
 
 async function draw(image, anime, fonts, consts) {
   const { largura, altura, padding } = consts;
-  const { fontFilme } = fonts; // Usa a nova fonte 108px
+  const { fontFilme } = fonts; 
   
   // 1. Fundo Preto (o 'image' ja e preto por padrao)
   
@@ -17,14 +18,14 @@ async function draw(image, anime, fonts, consts) {
   const textoAreaLargura = largura - posterWidth - (padding * 2);
   const titulo = anime.title.romaji || anime.title.english || "Titulo Desconhecido";
   
-  // 4. Desenha o Titulo (Logica customizada)
+  // 4. Desenha o Titulo
   image.print(
     fontFilme,
-    padding, // X
-    0,       // Y
+    padding, 
+    0,       
     titulo,
-    textoAreaLargura, // Max Largura
-    altura          // Max Altura (Jimp vai centralizar verticalmente)
+    textoAreaLargura, 
+    altura          
   );
 }
 
