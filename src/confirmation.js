@@ -1,10 +1,10 @@
 // ARQUIVO: src/confirmation.js
-// (Atualizado com duas funcoes de menu)
+// (Atualizado com um menu de edicao SIMPLES para Filmes)
 
 const { Markup } = require('telegraf');
 const { traduzirTemporada } = require('./utils.js');
 
-// --- *** FUNCAO 1: Menu de Escolha de Layout *** ---
+// --- FUNCAO 1: Menu de Escolha de Layout (Sem mudancas) ---
 async function enviarMenuLayout(ctx) {
   const layout = ctx.session.animeData.layout || 'TV';
   
@@ -33,14 +33,11 @@ Modelo Atual: ` + "```" + `${layout}` + "```" + `
 }
 
 
-// --- *** FUNCAO 2: Menu Principal de Edicao *** ---
-async function enviarMenuEdicao(ctx) {
+// --- FUNCAO 2: Menu de Edicao COMPLETO (Para TV/ONA) ---
+async function enviarMenuEdicaoCompleto(ctx) {
   const animeData = ctx.session.animeData;
-  if (!animeData) {
-    return ctx.reply('Sessao expirada. Por favor, faca a busca novamente com /capa');
-  }
+  if (!animeData) { /* ... (codigo de erro) ... */ }
 
-  // Prepara o texto (monoespacado)
   const titulo = (animeData.title && animeData.title.romaji) || "N/A";
   const estudio = (animeData.studios && animeData.studios.nodes.length > 0) ? animeData.studios.nodes[0].name : 'N/A';
   const temporada = animeData.season ? `${traduzirTemporada(animeData.season)} ${animeData.seasonYear}` : "N/A";
@@ -91,7 +88,53 @@ Classificacao: ${classificacao}
   await ctx.reply(texto, botoes);
 }
 
+// --- *** NOVO: FUNCAO 3: Menu de Edicao SIMPLES (Para Filme) *** ---
+async function enviarMenuEdicaoFilme(ctx) {
+  const animeData = ctx.session.animeData;
+  if (!animeData) { /* ... (codigo de erro) ... */ }
+
+  const titulo = (animeData.title && animeData.title.romaji) || "N/A";
+  const classificacao = animeData.classificacaoManual || '(Nenhuma)';
+  const layout = animeData.layout || 'FILME'; 
+
+  const texto = `
+Editando Modelo FILME:
+
+` + "```" + `
+Layout: ${layout}
+Titulo: ${titulo}
+Classificacao: ${classificacao}
+` + "```" + `
+`;
+
+  // Botoes simplificados
+  const botoes = Markup.inlineKeyboard([
+    [ Markup.button.callback('✅ Gerar Capa Agora!', 'generate_final') ],
+    [ 
+      Markup.button.callback('Editar Titulo', 'edit_title'),
+      Markup.button.callback('Editar Classificacao', 'edit_rating')
+    ],
+    [ 
+      Markup.button.callback('🖼️ Editar Pôster', 'edit_poster')
+    ],
+    [ 
+      Markup.button.callback('⬅️ Voltar (Layout)', 'voltar_layout'),
+      Markup.button.callback('❌ Cancelar', 'cancel_edit') 
+    ]
+  ]);
+
+  try {
+    if (ctx.callbackQuery) {
+      await ctx.deleteMessage();
+    }
+  } catch (e) { /* ignora */ }
+
+  await ctx.reply(texto, botoes);
+}
+
+
 module.exports = { 
   enviarMenuLayout,
-  enviarMenuEdicao
+  enviarMenuEdicao: enviarMenuEdicaoCompleto, // Renomeia a principal
+  enviarMenuEdicaoFilme // Exporta a nova
 };
