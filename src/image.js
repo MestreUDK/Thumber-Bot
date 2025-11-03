@@ -1,10 +1,19 @@
 // ARQUIVO: src/image.js
-// (CORRIGIDO: Corrigido o erro 'tagBackground.round is not a function')
+// (AGORA E O "DIRETOR" - Limpo e modularizado)
 
 const Jimp = require('jimp');
 const path = require('path');
-const { traduzirTemporada, getRatingImageName } = require('./utils.js');
 
+// Importa as funcoes de desenho do novo arquivo
+const { 
+  drawBackground, 
+  drawPoster, 
+  drawText, 
+  drawTags, 
+  drawClassification 
+} = require('./drawing.js');
+
+// --- 1. CARREGAMENTO DE FONTES (Continua aqui) ---
 let fontTitulo, fontInfo, fontTag;
 
 async function carregarFontes() {
@@ -26,134 +35,45 @@ async function carregarFontes() {
   }
 }
 
-
+// --- 2. GERADOR DE CAPA (Agora muito mais limpo) ---
 async function gerarCapa(anime) {
   try {
+    // Garante que as fontes estao carregadas
     await carregarFontes();
+    const fonts = { fontTitulo, fontInfo, fontTag };
     
+    // Define as constantes
     const largura = 1280;
     const altura = 720;
     const padding = 40;
+    
+    // Cria a imagem base
     const image = new Jimp(largura, altura, '#000000');
     
-    // --- 1. Imagem de Fundo (Banner) ---
-    if (anime.bannerImage) {
-      const banner = await Jimp.read(anime.bannerImage);
-      banner.cover(largura, altura); // Cobre 1280x720
-      image.composite(banner, 0, 0);
-    }
+    // --- Chama os modulos de desenho em ordem ---
     
-    // --- 2. Overlay (Escurecimento) ---
-    const overlay = new Jimp(largura, altura, '#000000');
-    overlay.opacity(0.6);
-    image.composite(overlay, 0, 0);
+    // 1. Desenha Fundo e Overlay
+    await drawBackground(image, anime.bannerImage, largura, altura);
     
-    // --- 3. Imagem do Poster (Cover) ---
-    let posterWidth = 0; // Vamos guardar a largura do poster
-    if (anime.coverImage && anime.coverImage.large) {
-      const cover = await Jimp.read(anime.coverImage.large);
-      
-      // Redimensiona o poster para PREENCHER a altura total (720px)
-      cover.resize(Jimp.AUTO, altura); 
-      
-      posterWidth = cover.bitmap.width; // Salva a largura
-      
-      // Alinha na direita (X) e no topo (Y)
-      const coverX = largura - posterWidth;
-      const coverY = 0; 
-      
-      image.composite(cover, coverX, coverY);
-    }
+    // 2. Desenha o Poster (e pega a largura dele)
+    const posterWidth = await drawPoster(image, anime.coverImage.large, largura, altura, padding);
     
-    // --- 4. Textos ---
+    // 3. Define a area de texto (baseado na largura do poster)
     const textoAreaLargura = largura - posterWidth - (padding * 2);
+    
+    // 4. Desenha os Textos (e pega a proxima altura Y)
+    const proximoY = await drawText(image, anime, fonts, padding, textoAreaLargura);
+    
+    // 5. Desenha as Tags (usando a altura Y que o texto retornou)
+    await drawTags(image, anime, fonts, padding, textoAreaLargura, proximoY);
+    
+    // 6. Desenha a Classificacao
+    await drawClassification(image, anime, padding, altura);
 
-    let currentTextY = padding;
-    const temporada = traduzirTemporada(anime.season);
-    const episodios = anime.episodes || '??';
-    
-    const infoTopo = `${temporada} ${anime.seasonYear} - ${episodios} EPISODIOS`;
-    image.print(fontInfo, padding, currentTextY, infoTopo, textoAreaLargura);
-    currentTextY += Jimp.measureTextHeight(fontInfo, infoTopo, textoAreaLargura) + 10;
-    
-    const titulo = anime.title.romaji || anime.title.english || "Titulo Desconhecido";
-    image.print(fontTitulo, padding, currentTextY, titulo, textoAreaLargura);
-    currentTextY += Jimp.measureTextHeight(fontTitulo, titulo, textoAreaLargura) + 20;
-    
-    const estudio = anime.studios.nodes.length > 0 ? anime.studios.nodes[0].name : 'Estudio desconhecido';
-    image.print(fontTitulo, padding, currentTextY, estudio, textoAreaLargura); 
-    currentTextY += Jimp.measureTextHeight(fontTitulo, estudio, textoAreaLargura) + 20;
-    
-    
-    // --- 5. TAGS DE GENERO (COM BORDAS ARREDONDADAS) ---
-    let currentTagX = padding;
-    let currentTagY = currentTextY;
-    
-    const tagHeight = 35;
-    const tagPaddingHorizontal = 15;
-    const tagPaddingVertical = 5;
-    const tagBorderRadius = 10;
-    const tagColor = 0xFFBB00FF; // Laranja
-
-    const generos = anime.genres || [];
-    
-    for (const genero of generos.slice(0, 4)) {
-      const genreText = genero.toUpperCase();
-      const textWidth = Jimp.measureText(fontTag, genreText);
-      const tagWidth = textWidth + (tagPaddingHorizontal * 2);
-
-      if (currentTagX + tagWidth > textoAreaLargura + padding) {
-        currentTagX = padding;
-        currentTagY += tagHeight + 15;
-      }
-      
-      // --- *** A CORRECAO ESTA AQUI *** ---
-      // (Eu juntei as 3 linhas erradas em 1 linha correta)
-      // Cria o fundo arredondado E cola na imagem principal
-      image.composite(
-        new Jimp(tagWidth, tagHeight, tagColor).round(tagBorderRadius), 
-        currentTagX, 
-        currentTagY
-      );
-      // --- *** FIM DA CORRECAO *** ---
-
-      // Calcula a posicao Y do texto para centraliza-lo
-      const textY = currentTagY + (tagHeight - Jimp.measureTextHeight(fontTag, genreText, tagWidth)) / 2;
-      
-      // Escreve o texto da tag por cima do fundo
-      image.print(
-        fontTag, 
-        currentTagX + tagPaddingHorizontal, 
-        textY, 
-        genreText
-      );
-      
-      currentTagX += tagWidth + 10;
-    }
-    
-    
-    // Bloco da logo (Desativado)
+    // Bloco da logo (Continua desativado)
     /* ... */
     
-    // Classificacao (Posicao na Esquerda)
-    if (anime.classificacaoManual) { 
-      const ratingFileName = getRatingImageName(anime.classificacaoManual);
-      if (ratingFileName) {
-        try {
-          const ratingImagePath = path.join(__dirname, '..', 'assets', 'classificacao', ratingFileName);
-          const ratingImage = await Jimp.read(ratingImagePath);
-          ratingImage.resize(Jimp.AUTO, 60);
-          
-          const ratingX = padding;
-          const ratingY = altura - ratingImage.bitmap.height - padding; 
-
-          image.composite(ratingImage, ratingX, ratingY);
-        } catch (err) {
-          console.warn(`Aviso: Nao foi possivel carregar a imagem ${ratingFileName} da pasta /classificacao/`);
-        }
-      }
-    }
-    
+    // Retorna a imagem pronta
     const buffer = await image.getBufferAsync(Jimp.MIME_PNG);
     return { success: true, buffer: buffer };
     
