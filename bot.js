@@ -1,9 +1,7 @@
-// ARQUIVO: bot.js (Arquivo Principal - USANDO PACOTE EXTERNO)
+// ARQUIVO: bot.js (Arquivo Principal - Com Whitelist)
 
 require('dotenv').config();
-// MUDANCA: Nao precisamos mais do 'session' daqui
 const { Telegraf } = require('telegraf'); 
-// MUDANCA: Importamos o novo pacote
 const LocalSession = require('telegraf-session-local');
 
 // Importa nossas funcoes da pasta 'src'
@@ -11,6 +9,8 @@ const { buscarAnime } = require('./src/anilist.js');
 const { carregarFontes } = require('./src/image.js'); 
 const { enviarConfirmacao } = require('./src/confirmation.js');
 const { registerEvents } = require('./src/events.js');
+// --- *** NOVO: Importa o modulo de seguranca *** ---
+const { checkPermission, allowedIds } = require('./src/security.js');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
@@ -20,18 +20,33 @@ if (!BOT_TOKEN) {
 }
 
 const bot = new Telegraf(BOT_TOKEN);
-
-// --- *** A NOVA LINHA QUE CORRIGE O ERRO *** ---
-// Usamos o 'LocalSession' em vez do 'session()' antigo
 bot.use(new LocalSession().middleware()); 
 
 // --- REGISTRA OS COMANDOS PRINCIPAIS ---
 
+// --- *** ATUALIZADO: Comando /start *** ---
+// (Agora reconhece Admin, Whitelist e Estranhos)
 bot.start((ctx) => {
-  ctx.reply('Ola! Eu sou o bot gerador de capas.\n\nEnvie /capa [nome do anime] para comecar.');
+  const userId = String(ctx.from.id);
+  const username = ctx.from.username || 'N/A';
+  const adminId = process.env.ADMIN_ID;
+
+  if (userId === String(adminId)) {
+    // 1. Mensagem para o Admin
+    ctx.reply('Ola Mestre! Eu sou o bot gerador de capas. Seus comandos estao prontos.');
+  } else if (allowedIds.has(userId)) {
+    // 2. Mensagem para a Whitelist
+    ctx.reply('Ola! Voce esta na lista de permissao. Bem-vindo(a) ao bot!\nEnvie /capa [nome do anime] para comecar.');
+  } else {
+    // 3. Mensagem para Estranhos
+    console.log(`[LOG] Novo usuario tentou iniciar: ID=${userId}, Nome=${username}`);
+    ctx.reply(`Desculpe, este e um bot privado.\n\nSeu ID de usuario e: ${userId}\n(Informe este ID para o administrador)`);
+  }
 });
 
-bot.command('capa', async (ctx) => {
+// --- *** ATUALIZADO: Comando /capa *** ---
+// (Adicionamos o 'checkPermission' para proteger o comando)
+bot.command('capa', checkPermission, async (ctx) => {
   try {
     const nomeDoAnime = ctx.message.text.replace('/capa', '').trim();
     if (!nomeDoAnime) {
@@ -46,10 +61,7 @@ bot.command('capa', async (ctx) => {
     }
     
     const anime = resultadoApi.data;
-    
     anime.classificacaoManual = null; 
-    
-    // Agora 'ctx.session' vai ser criado pelo 'LocalSession'
     ctx.session.animeData = anime; 
     ctx.session.awaitingInput = null; 
     
@@ -62,13 +74,14 @@ bot.command('capa', async (ctx) => {
 });
 
 // --- REGISTRA TODOS OS OUTROS EVENTOS ---
-registerEvents(bot);
+// (Passamos o 'checkPermission' para proteger botoes e uploads)
+registerEvents(bot, checkPermission);
 
 
 // --- INICIA O BOT ---
 carregarFontes().then(() => {
   bot.launch();
-  console.log('Bot REATORADO iniciado e rodando (com LocalSession)...');
+  console.log('Bot REATORADO iniciado e rodando (com Seguranca de Whitelist)...');
 }).catch(err => {
   console.error('Falha ao carregar fontes no inicio!', err);
   process.exit(1);
