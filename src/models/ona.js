@@ -1,5 +1,5 @@
 // ARQUIVO: src/models/ona.js
-// (CORRIGIDO: Importando os 5 modulos de desenho corretamente)
+// (CORRIGIDO: Importando os 5 modulos de desenho corretamente.)
 
 // --- *** A CORRECAO ESTA AQUI *** ---
 const { drawBackground } = require('../drawing/background.js');
