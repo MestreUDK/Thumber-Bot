@@ -1,13 +1,13 @@
 // ARQUIVO: src/models/tv.js
-// (Modelo padrao para TV e Series)
+// (CORRIGIDO: Importando os 5 modulos de desenho corretamente)
 
-const { 
-  drawBackground, 
-  drawPoster, 
-  drawText, 
-  drawTags, 
-  drawClassification 
-} = require('../drawing'); // Importa o "artista"
+// --- *** A CORRECAO ESTA AQUI *** ---
+// Em vez de importar 1 modulo, importamos os 5 arquivos de /drawing/
+const { drawBackground } = require('../drawing/background.js');
+const { drawPoster } = require('../drawing/poster.js');
+const { drawText } = require('../drawing/text.js');
+const { drawTags } = require('../drawing/tags.js');
+const { drawClassification } = require('../drawing/classification.js');
 
 async function draw(image, anime, fonts, consts) {
   const { largura, altura, padding } = consts;
