@@ -1,16 +1,17 @@
 // ARQUIVO: src/models/filme.js
-// (ATUALIZADO: Agora usa o 'bottomBar' para desenhar so a classificacao)
+// (CORRIGIDO: Remove 'bottomBar' e chama 'classification' diretamente)
 
 const Jimp = require('jimp');
 const { drawPoster } = require('../drawing/poster.js'); 
-// --- *** MUDANCA: Importa o novo 'bottomBar.js' *** ---
-const { drawBottomBar } = require('../drawing/bottomBar.js'); 
+// --- *** MUDANCA: Importa o 'classification' em vez do 'bottomBar' *** ---
+const { drawClassification } = require('../drawing/classification.js'); 
 
 async function draw(image, anime, fonts, consts) {
   const { largura, altura, padding } = consts;
-  const { fontFilme } = fonts; 
+  const { fontFilme } = fonts; // Usa a nova fonte 108px
 
-  // 1. Fundo Preto 
+  // 1. Fundo Preto (o 'image' ja e preto por padrao)
+
   // 2. Poster
   const posterWidth = await drawPoster(image, anime.coverImage.large, largura, altura, padding);
 
@@ -22,20 +23,20 @@ async function draw(image, anime, fonts, consts) {
   // 4. Desenha o Titulo
   image.print(
     fontFilme,
-    textoAreaX, 
-    0,          
+    textoAreaX, // X (Onde a area de texto comeca)
+    0,          // Y (Topo da imagem)
     {
       text: titulo,
       alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER, 
       alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
     },
-    textoAreaLargura, 
-    altura          
+    textoAreaLargura, // Max Largura
+    altura          // Max Altura
   );
-  
-  // 5. Desenha a Barra Inferior (que so vai desenhar a classificacao)
-  // (Como o "anime" nao tera 'studios' ou 'genres' no modo filme, ele so desenha o A14)
-  await drawBottomBar(image, anime, fonts, padding, textoAreaLargura, altura);
+
+  // --- *** MUDANCA: Chama apenas o 'classification' *** ---
+  // (Isso vai desenhar APENAS a classificacao, sem studio ou tags)
+  await drawClassification(image, anime, padding, altura);
 }
 
 module.exports = { draw };
