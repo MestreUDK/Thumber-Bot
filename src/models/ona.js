@@ -1,7 +1,6 @@
 // ARQUIVO: src/models/ona.js
-// (CORRIGIDO: Importando os 5 modulos de desenho corretamente.)
+// (ATUALIZADO: Ordem de desenho corrigida)
 
-// --- *** A CORRECAO ESTA AQUI *** ---
 const { drawBackground } = require('../drawing/background.js');
 const { drawPoster } = require('../drawing/poster.js');
 const { drawText } = require('../drawing/text.js');
@@ -24,14 +23,16 @@ async function draw(image, anime, fonts, consts) {
   // 3. Area de Texto
   const textoAreaLargura = largura - posterWidth - (padding * 2);
   
-  // 4. Textos (usa os dados modificados 'animeONA')
-  const proximoY = await drawText(image, animeONA, fonts, padding, textoAreaLargura);
+  // 4. Textos (Info, Titulo, Estudio) - CONTINUAM NO TOPO
+  await drawText(image, animeONA, fonts, padding, textoAreaLargura);
   
-  // 5. Tags
-  await drawTags(image, animeONA, fonts, padding, textoAreaLargura, proximoY);
+  // --- *** MUDANCA DE POSICAO *** ---
   
-  // 6. Classificacao
+  // 5. Classificacao (desenhada primeiro no fundo)
   await drawClassification(image, animeONA, padding, altura);
+  
+  // 6. Tags (desenhadas logo acima da classificacao)
+  await drawTags(image, animeONA, fonts, padding, textoAreaLargura, altura);
 }
 
 module.exports = { draw };
