@@ -1,5 +1,5 @@
 // ARQUIVO: src/drawing/bottomBar.js
-// (ATUALIZADO com "Fluxo de Tags" inteligente entre as linhas)
+// (ATUALIZADO com "Fluxo de Tags" inteligente e correcao no Jimp.AUTO)
 
 const Jimp = require('jimp');
 const fs = require('fs');
@@ -121,7 +121,10 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
       try {
         const ratingImagePath = path.join(__dirname, '..', '..', 'assets', 'classificacao', ratingFileName);
         const ratingImage = await Jimp.read(ratingImagePath);
-        ratingImage.resize(Jimpo.AUTO, classificationHeight);
+        
+        // --- *** CORRECAO ESTAVA AQUI *** ---
+        // (Estava "Jimpo.AUTO", corrigido para "Jimp.AUTO")
+        ratingImage.resize(Jimp.AUTO, classificationHeight);
 
         if (ratingX + ratingImage.bitmap.width < textAreaWidth + padding) {
             image.composite(ratingImage, ratingX, classificationY);
@@ -131,5 +134,4 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
   }
 }
 
-// --- *** CORRECAO ESTA AQUI *** ---
 module.exports = { drawBottomBar };
