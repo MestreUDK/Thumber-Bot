@@ -50,27 +50,27 @@ async function enviarMenuEdicaoCompleto(ctx) {
   const layout = animeData.layout || 'TV'; 
 
   const texto = `
-Confirme os dados (Estes dados serao usados na imagem):
+Confirme os dados (Estes dados serão usados na imagem):
 
 ` + "```" + `
 Layout: ${layout}
-Titulo: ${titulo}
-Estudio: ${estudio}
-Info: ${temporada} - ${episodios} EPISODIOS
+Título: ${titulo}
+Estúdio: ${estudio}
+Info: ${temporada} - ${episodios} EPISÓDIOS 
 Tags: ${tags}
-Classificacao: ${classificacao}
+Classificação: ${classificacao}
 ` + "```" + `
 `;
 
   const botoes = Markup.inlineKeyboard([
     [ Markup.button.callback('✅ Gerar Capa Agora!', 'generate_final') ],
     [ 
-      Markup.button.callback('Editar Titulo', 'edit_title'),
-      Markup.button.callback('Editar Estudio', 'edit_studio')
+      Markup.button.callback('Editar Título', 'edit_title'),
+      Markup.button.callback('Editar Estúdio', 'edit_studio')
     ],
     [ 
       Markup.button.callback('Editar Tags', 'edit_tags'),
-      Markup.button.callback('Editar Classificacao', 'edit_rating')
+      Markup.button.callback('Editar Classificação', 'edit_rating')
     ],
     [ 
       Markup.button.callback('🖼️ Editar Pôster', 'edit_poster'),
@@ -107,16 +107,16 @@ Editando Modelo FILME:
 
 ` + "```" + `
 Layout: ${layout}
-Titulo: ${titulo}
-Classificacao: ${classificacao}
+Título: ${titulo}
+Classificação: ${classificacao}
 ` + "```" + `
 `;
 
   const botoes = Markup.inlineKeyboard([
     [ Markup.button.callback('✅ Gerar Capa Agora!', 'generate_final') ],
     [ 
-      Markup.button.callback('Editar Titulo', 'edit_title'),
-      Markup.button.callback('Editar Classificacao', 'edit_rating')
+      Markup.button.callback('Editar Título', 'edit_title'),
+      Markup.button.callback('Editar Classificação', 'edit_rating')
     ],
     [ 
       Markup.button.callback('🖼️ Editar Pôster', 'edit_poster')
