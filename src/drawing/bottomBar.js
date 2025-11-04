@@ -1,5 +1,5 @@
 // ARQUIVO: src/drawing/bottomBar.js
-// (Este é o código completo e corrigido, com apenas UMA importação do Jimp)
+// (ATUALIZADO para os novos moldes de 45px de altura)
 
 const Jimp = require('jimp');
 const fs = require('fs');
@@ -16,10 +16,12 @@ try {
   tagConfig = { "DEFAULT": { "text": null, "color": "tag_cinza_claro.png" } };
 }
 
-// --- 2. Cache de Moldes de Tag ---
+// --- 2. Cache de Moldes de Tag (ATUALIZADO) ---
 const tagMolds = {};
-const cantoLargura = 14;
-const meioLargura = 2;
+// ATUALIZADO: Largura do canto = 22px (Raio de 50% de 45px de altura)
+const cantoLargura = 22; 
+// ATUALIZADO: Largura do miolo = 16px (Baseado no seu molde de 60px: 60 - 22 - 22 = 16)
+const meioLargura = 16; 
 
 async function getTagSlices(moldName) {
   if (tagMolds[moldName]) {
@@ -29,9 +31,10 @@ async function getTagSlices(moldName) {
     const moldPath = path.join(__dirname, '..', '..', 'assets', 'tags', moldName);
     const mold = await Jimp.read(moldPath);
     const slices = {
-      left: mold.clone().crop(0, 0, cantoLargura, 35),
-      middle: mold.clone().crop(cantoLargura, 0, meioLargura, 35),
-      right: mold.clone().crop(cantoLargura + meioLargura, 0, cantoLargura, 35)
+      // ATUALIZADO: Corta com 45px de altura
+      left: mold.clone().crop(0, 0, cantoLargura, 45),
+      middle: mold.clone().crop(cantoLargura, 0, meioLargura, 45),
+      right: mold.clone().crop(cantoLargura + meioLargura, 0, cantoLargura, 45)
     };
     tagMolds[moldName] = slices;
     return slices;
@@ -43,8 +46,9 @@ async function getTagSlices(moldName) {
 
 // --- 3. Funcao de desenhar uma linha de tags ---
 async function drawTagLine(image, tags, fonts, startX, startY, maxWidth) {
-  const { fontTagTV } = fonts; // <--- USA A FONTE CORRETA
-  const tagHeight = 35;
+  const { fontTagTV } = fonts;
+  // ATUALIZADO: Altura da tag
+  const tagHeight = 45; 
   const tagPaddingHorizontal = 15;
   const spaceBetween = 10;
   let currentTagX = startX;
@@ -67,11 +71,13 @@ async function drawTagLine(image, tags, fonts, startX, startY, maxWidth) {
       const meioWidth = tagWidth - (cantoLargura * 2);
       image.composite(slices.left, currentTagX, startY);
       if (meioWidth > 0) {
+          // ATUALIZADO: Redimensiona para 45px de altura
           image.composite(slices.middle.clone().resize(meioWidth, tagHeight), currentTagX + cantoLargura, startY);
       }
       image.composite(slices.right, currentTagX + cantoLargura + meioWidth, startY);
     }
 
+    // ATUALIZADO: Calcula o Y do texto baseado na nova altura de 45px
     const textY = startY + (tagHeight - Jimp.measureTextHeight(fontTagTV, genreText, tagWidth)) / 2;
     image.print(fontTagTV, currentTagX + tagPaddingHorizontal, textY, genreText);
     currentTagX += tagWidth + spaceBetween;
@@ -81,15 +87,16 @@ async function drawTagLine(image, tags, fonts, startX, startY, maxWidth) {
 
 // --- 4. Funcao Principal de Desenhar a Barra ---
 async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura) { 
-  const { fontEstudioTV } = fonts; // <--- USA A FONTE CORRETA
+  const { fontEstudioTV } = fonts;
 
   const classificationHeight = 60;
-  const tagHeight = 35;
+  // ATUALIZADO: Altura da tag
+  const tagHeight = 45; 
   const spaceBetween = 10; 
   const spaceBetweenLines = 15; 
   const generos = anime.genres || [];
 
-  // --- POSICOES ---
+  // --- POSICOES (As formulas sao dinamicas, vao se ajustar sozinhas) ---
   const line1Y = altura - padding - classificationHeight + (classificationHeight / 2) - (tagHeight / 2);
   const classificationY = altura - padding - classificationHeight;
   const line2Y = line1Y - tagHeight - spaceBetweenLines;
