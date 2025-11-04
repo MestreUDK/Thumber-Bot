@@ -19,7 +19,7 @@ async function carregarFontes() {
     // Carrega as fontes que voce upou (usando Bold por padrao)
     fontTituloTV = await Jimp.loadFont(path.join(__dirname, '..', 'assets', 'fonts', 'boogaloo_47.fnt'));
     fontInfoTV = await Jimp.loadFont(path.join(__dirname, '..', 'assets', 'fonts', 'roboto_bold_34.fnt'));
-    fontEstudioTV = await Jimp.loadFont(path.join(__dirname, '..', 'assets', 'fonts', 'boogaloo_40.fnt'));
+    fontEstudioTV = await Jimp.loadFont(path.join(__dirname, '..', 'assets', 'fonts', 'boogaloo_44.fnt'));
     fontTagTV = await Jimp.loadFont(path.join(__dirname, '..', 'assets', 'fonts', 'roboto_bold_32.fnt'));
     fontFilme = await Jimp.loadFont(path.join(__dirname, '..', 'assets', 'fonts', 'boogaloo_108.fnt')); 
     
