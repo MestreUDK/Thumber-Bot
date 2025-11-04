@@ -1,5 +1,5 @@
 // ARQUIVO: src/drawing/tags.js
-// (ATUALIZADO: Implementa a "Magica das 3 Fatias" para bordas perfeitas)
+// (ATUALIZADO: Posição movida para o fundo, acima da classificação)
 
 const Jimp = require('jimp');
 const fs = require('fs');
@@ -15,17 +15,15 @@ try {
   tagConfig = { "DEFAULT": { "text": null, "color": "tag_cinza_claro.png" } };
 }
 
-// --- 2. Cache de Moldes de Tag (AGORA COM FATIAS) ---
+// --- 2. Cache de Moldes de Tag (COM FATIAS) ---
 const tagMolds = {};
 const cantoLargura = 14; // Largura do seu canto arredondado (14px + 2px meio + 14px = 30px total)
 const meioLargura = 2;  // Largura da fatia do meio no seu molde
 
 async function getTagSlices(moldName) {
-  // Se ja fatiamos 'tag_laranja.png', nao faz de novo
   if (tagMolds[moldName]) {
     return tagMolds[moldName];
   }
-  
   try {
     const moldPath = path.join(__dirname, '..', '..', 'assets', 'tags', moldName);
     const mold = await Jimp.read(moldPath);
@@ -36,9 +34,8 @@ async function getTagSlices(moldName) {
     const cantoDireito = mold.clone().crop(cantoLargura + meioLargura, 0, cantoLargura, 35);
     
     const slices = { left: cantoEsquerdo, middle: meio, right: cantoDireito };
-    tagMolds[moldName] = slices; // Salva as fatias no cache
+    tagMolds[moldName] = slices;
     return slices;
-    
   } catch (err) {
     console.error(`ERRO: Nao foi possivel carregar ou fatiar o molde de tag: ${moldName}`, err.message);
     return null;
@@ -46,14 +43,22 @@ async function getTagSlices(moldName) {
 }
 
 // --- 3. Funcao Principal de Desenhar as Tags ---
-async function drawTags(image, anime, fonts, padding, textAreaWidth, currentTextY) {
+// *** MUDANÇA: 'currentTextY' foi trocado por 'altura' ***
+async function drawTags(image, anime, fonts, padding, textAreaWidth, altura) { 
   const { fontTag } = fonts;
-  let currentTagX = padding;
-  let currentTagY = currentTextY;
   
   const tagHeight = 35;
   const tagPaddingHorizontal = 15;
   const generos = anime.genres || [];
+
+  // --- *** MUDANÇA: Calcula a posicao Y a partir do FUNDO *** ---
+  const classificationHeight = 60; // Altura da imagem de classificacao
+  const spaceBelowTags = 10; // Espaco entre tags e classificacao
+  
+  // O Y comeca no fundo, sobe o padding, sobe a classificacao, sobe o espaco, e sobe a altura da propria tag
+  let currentTagY = altura - padding - classificationHeight - spaceBelowTags - tagHeight;
+  let currentTagX = padding;
+  // --- FIM DA MUDANÇA ---
   
   for (const genero of generos.slice(0, 4)) {
     const generoUpper = genero.toUpperCase();
@@ -65,21 +70,18 @@ async function drawTags(image, anime, fonts, padding, textAreaWidth, currentText
     const textWidth = Jimp.measureText(fontTag, genreText);
     const tagWidth = textWidth + (tagPaddingHorizontal * 2);
 
+    // Se nao couber na linha, para de desenhar
     if (currentTagX + tagWidth > textAreaWidth + padding) {
-      currentTagX = padding;
-      currentTagY += tagHeight + 15;
+       break; 
     }
     
-    // --- *** A MAGICA DAS 3 FATIAS *** ---
     const slices = await getTagSlices(moldName);
     
     if (slices) {
-      const meioWidth = tagWidth - (cantoLargura * 2); // Largura que o meio precisa ter
-            
-      // 1. Cola o canto esquerdo
+      const meioWidth = tagWidth - (cantoLargura * 2);
+      
       image.composite(slices.left, currentTagX, currentTagY);
       
-      // 2. Cola o meio (esticado)
       if (meioWidth > 0) {
           image.composite(
               slices.middle.clone().resize(meioWidth, tagHeight), // Estica o meio
@@ -88,19 +90,13 @@ async function drawTags(image, anime, fonts, padding, textAreaWidth, currentText
           );
       }
       
-      // 3. Cola o canto direito
       image.composite(
           slices.right, 
           currentTagX + cantoLargura + meioWidth, 
           currentTagY
       );
       
-    } else {
-      // Fallback (retangulo quadrado) se o molde falhar
-      const tagFallback = new Jimp(tagWidth, tagHeight, 0xFFBB00FF);
-      image.composite(tagFallback, currentTagX, currentTagY);
-    }
-    // --- *** FIM DA MAGICA *** ---
+    } // (Nao precisamos mais do Fallback, pois o bug do .radius() esta resolvido)
 
     const textY = currentTagY + (tagHeight - Jimp.measureTextHeight(fontTag, genreText, tagWidth)) / 2;
     
