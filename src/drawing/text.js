@@ -1,7 +1,10 @@
 // ARQUIVO: src/drawing/text.js
-const Jimp = require('jimp');
-const { traduzirTemporada } = require('../utils.js'); // Sobe um nivel para 'src/utils.js'
+// (ATUALIZADO: Nao desenha mais o Estudio)
 
+const Jimp = require('jimp');
+const { traduzirTemporada } = require('../utils.js'); 
+
+// --- 3. Desenha os Textos Principais (Info e Titulo) ---
 async function drawText(image, anime, fonts, padding, textAreaWidth) {
   const { fontTitulo, fontInfo } = fonts;
   let currentTextY = padding;
@@ -17,11 +20,9 @@ async function drawText(image, anime, fonts, padding, textAreaWidth) {
   image.print(fontTitulo, padding, currentTextY, titulo, textAreaWidth);
   currentTextY += Jimp.measureTextHeight(fontTitulo, titulo, textAreaWidth) + 20;
   
-  const estudio = anime.studios.nodes.length > 0 ? anime.studios.nodes[0].name : 'Estudio desconhecido';
-  image.print(fontTitulo, padding, currentTextY, estudio, textAreaWidth); 
-  currentTextY += Jimp.measureTextHeight(fontTitulo, estudio, textAreaWidth) + 20;
+  // A parte do "Estudio" foi removida daqui
   
-  return currentTextY;
+  return currentTextY; // Retorna o Y (nao e mais usado, mas e bom manter)
 }
 
 module.exports = { drawText };
