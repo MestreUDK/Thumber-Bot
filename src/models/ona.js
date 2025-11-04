@@ -1,13 +1,12 @@
 // ARQUIVO: src/models/ona.js
-// (ATUALIZADO: Ordem de desenho corrigida para mover o Estudio)
+// (ATUALIZADO: Chama o novo 'drawBottomBar')
 
-// --- *** ATUALIZADO: Importa o novo 'studio.js' *** ---
 const { drawBackground } = require('../drawing/background.js');
 const { drawPoster } = require('../drawing/poster.js');
 const { drawText } = require('../drawing/text.js');
-const { drawTags } = require('../drawing/tags.js');
-const { drawClassification } = require('../drawing/classification.js');
-const { drawStudio } = require('../drawing/studio.js'); // <-- NOVO
+const { drawStudio } = require('../drawing/studio.js');
+// --- *** MUDANCA: Importa o novo 'bottomBar.js' *** ---
+const { drawBottomBar } = require('../drawing/bottomBar.js');
 
 async function draw(image, anime, fonts, consts) {
   const { largura, altura, padding } = consts;
@@ -16,28 +15,20 @@ async function draw(image, anime, fonts, consts) {
   animeONA.season = 'ONA';
   animeONA.seasonYear = ''; 
 
-  // 1. Fundo
   await drawBackground(image, animeONA.bannerImage, largura, altura);
-  
-  // 2. Poster
   const posterWidth = await drawPoster(image, animeONA.coverImage.large, largura, altura, padding);
-  
-  // 3. Area de Texto
   const textoAreaLargura = largura - posterWidth - (padding * 2);
   
-  // --- *** ORDEM DE DESENHO ATUALIZADA *** ---
+  // --- ORDEM DE DESENHO ATUALIZADA ---
   
-  // 4. Textos (Info, Titulo) - Ficam no TOPO
+  // 1. Textos (Info, Titulo) - Ficam no TOPO
   await drawText(image, animeONA, fonts, padding, textoAreaLargura);
   
-  // 5. Classificacao - Fica no FUNDO
-  await drawClassification(image, animeONA, padding, altura);
-  
-  // 6. Tags (Calcula a pos acima da Classificacao)
-  await drawTags(image, animeONA, fonts, padding, textoAreaLargura, altura);
-  
-  // 7. Estudio (Calcula a pos acima das Tags)
+  // 2. Estudio (Calcula a pos acima da barra)
   await drawStudio(image, animeONA, fonts, padding, textoAreaLargura, altura);
+  
+  // 3. Barra Inferior (Tags + Classificacao)
+  await drawBottomBar(image, animeONA, fonts, padding, textoAreaLargura, altura);
 }
 
 module.exports = { draw };
