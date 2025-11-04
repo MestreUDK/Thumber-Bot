@@ -14,7 +14,7 @@ async function drawText(image, anime, fonts, padding, textAreaWidth) {
   const episodios = anime.episodes || '??';
   
   // Usa fontInfoTV (Roboto Bold 34)
-  const infoTopo = `${temporada} ${anime.seasonYear} - ${episodios} EPISÓDIOS`;
+  const infoTopo = `${temporada} ${anime.seasonYear} • ${episodios} EPISÓDIOS`;
   image.print(fontInfoTV, padding, currentTextY, infoTopo, textAreaWidth);
   currentTextY += Jimp.measureTextHeight(fontInfoTV, infoTopo, textAreaWidth) + 10;
   
