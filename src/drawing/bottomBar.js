@@ -41,10 +41,6 @@ async function getTagSlices(moldName) {
   }
 }
 
-// --- *** FUNCAO 'drawTagLine' REMOVIDA *** ---
-// (Nao precisamos mais dela, a logica estara dentro da 'drawBottomBar')
-
-
 // --- 4. Funcao Principal de Desenhar a Barra (LOGICA ATUALIZADA) ---
 async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura) { 
   const { fontEstudioTV, fontTagTV } = fonts;
@@ -56,30 +52,26 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
   const tagPaddingHorizontal = 15; // Padding interno da tag
 
   // --- POSICOES ---
-  // Linha 1 = A linha de baixo, junto com a classificacao
   const line1Y = altura - padding - classificationHeight + (classificationHeight / 2) - (tagHeight / 2);
   const classificationY = altura - padding - classificationHeight;
-  // Linha 2 = A linha acima da Linha 1
   const line2Y = line1Y - tagHeight - spaceBetweenLines;
 
-  // O Estudio fica acima de tudo
   const estudio = anime.studios.nodes.length > 0 ? anime.studios.nodes[0].name : 'Estudio desconhecido';
   const studioTextHeight = Jimp.measureTextHeight(fontEstudioTV, estudio, textAreaWidth);
   const studioY = line2Y - studioTextHeight - spaceBetween;
 
-  // --- 1. Desenha o Estudio (fica la em cima) ---
+  // --- 1. Desenha o Estudio ---
   image.print(fontEstudioTV, padding, studioY, estudio, textAreaWidth); 
 
   
   // --- 2. LOGICA DE FLUXO DE TAGS ---
-  const generos = anime.genres ? anime.genres.slice(0, 6) : []; // Limita a 6 tags no total
+  const generos = anime.genres ? anime.genres.slice(0, 6) : []; 
   
   let currentTagX = padding;
   let currentTagY = line1Y; // Comecamos na Linha 1 (a de baixo)
-  let onSecondLine = false; // Flag para saber se ja pulamos de linha
+  let onSecondLine = false; 
 
   for (const genero of generos) {
-    // Calcula o tamanho da tag
     const generoUpper = genero.toUpperCase();
     const config = tagConfig[generoUpper] || tagConfig["DEFAULT"];
     const genreText = (config.text || generoUpper).toUpperCase(); 
@@ -87,26 +79,20 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
     const textWidth = Jimp.measureText(fontTagTV, genreText);
     const tagWidth = textWidth + (tagPaddingHorizontal * 2);
 
-    // Verifica se a tag cabe na linha ATUAL
     if (currentTagX + tagWidth > textAreaWidth + padding) {
-      
-      // Se nao coube, e ja estamos na segunda linha, paramos tudo.
       if (onSecondLine) {
         break; 
       }
+      currentTagY = line2Y;
+      currentTagX = padding;
+      onSecondLine = true;
 
-      // Se nao coube, e estamos na primeira linha, pulamos para a segunda.
-      currentTagY = line2Y;     // Move o Y para a Linha 2
-      currentTagX = padding;    // Reseta o X
-      onSecondLine = true;      // Ativa a flag
-
-      // Verifica se a tag cabe na segunda linha (caso a tag seja gigante)
       if (currentTagX + tagWidth > textAreaWidth + padding) {
-        break; // Nao cabe nem na linha nova, desiste
+        break; 
       }
     }
 
-    // --- Desenha a Tag (na posicao (X, Y) calculada) ---
+    // --- Desenha a Tag ---
     const slices = await getTagSlices(moldName);
     if (slices) {
       const meioWidth = tagWidth - (cantoLargura * 2);
@@ -120,21 +106,14 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
     const textY = currentTagY + (tagHeight - Jimp.measureTextHeight(fontTagTV, genreText, tagWidth)) / 2;
     image.print(fontTagTV, currentTagX + tagPaddingHorizontal, textY, genreText);
     
-    // Atualiza o X para a proxima tag
     currentTagX += tagWidth + spaceBetween;
   }
   
   // --- 3. Desenha a Classificacao ---
-  
-  // Define onde a classificacao vai comecar
   let ratingX = padding;
   if (!onSecondLine) {
-    // Se ainda estamos na primeira linha, coloca a classificacao
-    // logo depois da ultima tag desenhada.
     ratingX = currentTagX; 
   }
-  // (Se ja pulamos para a segunda linha, a classificacao
-  // sera desenhada no comeco (padding) da Linha 1)
 
   if (anime.classificacaoManual) { 
     const ratingFileName = getRatingImageName(anime.classificacaoManual);
@@ -142,9 +121,8 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
       try {
         const ratingImagePath = path.join(__dirname, '..', '..', 'assets', 'classificacao', ratingFileName);
         const ratingImage = await Jimp.read(ratingImagePath);
-        ratingImage.resize(Jimp.AUTO, classificationHeight);
+        ratingImage.resize(Jimpo.AUTO, classificationHeight);
 
-        // Verifica se a classificacao cabe
         if (ratingX + ratingImage.bitmap.width < textAreaWidth + padding) {
             image.composite(ratingImage, ratingX, classificationY);
         }
@@ -153,4 +131,5 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
   }
 }
 
-module.Dexports = { drawBottomBar };
+// --- *** CORRECAO ESTA AQUI *** ---
+module.exports = { drawBottomBar };
