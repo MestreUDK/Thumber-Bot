@@ -7,7 +7,6 @@ const LocalSession = require('telegraf-session-local');
 // Importa nossas funcoes da pasta 'src'
 const { buscarAnime } = require('./src/anilist.js');
 const { carregarFontes } = require('./src/image.js'); 
-// ATUALIZADO: Importa os dois menus
 const { enviarMenuLayout } = require('./src/confirmation.js'); 
 const { registerEvents } = require('./src/events.js');
 const { checkPermission, allowedIds } = require('./src/security.js');
@@ -24,9 +23,40 @@ bot.use(new LocalSession().middleware());
 
 // --- REGISTRA OS COMANDOS PRINCIPAIS ---
 
-bot.start((ctx) => { /* ... (NENHUMA MUDANCA AQUI) ... */ });
+// --- ATUALIZADO: Comando /start ---
+// (Agora envia sua mensagem de boas-vindas)
+bot.start((ctx) => {
+  const welcomeMessage = "Bem-vindo(a) ao Thumber Bot feito pelo Mestre UDK, aqui é possível criar capas para seus posts de animes de forma descomplicada e intuitiva";
+  ctx.reply(welcomeMessage);
+});
 
-// --- *** ATUALIZADO: Comando /capa *** ---
+// --- NOVO: Comando /ajuda ---
+// (Envia o tutorial estilizado com Markdown)
+bot.command('ajuda', (ctx) => {
+  const helpMessage = `
+Olá! Aqui está como usar o Thumber Bot:
+
+Use o comando \`/capa [NOME_DO_ANIME]\`
+*Exemplo: /capa To Your Eternity*
+
+O que acontece depois:
+
+**1. 🔍 Busca:** O bot fará uma busca no AniList pelas informações do anime solicitado.
+
+**2. 🎨 Layout:** Você precisará escolher um modelo de capa (TV, Filme ou ONA).
+
+**3. ✏️ Edição:** Você poderá editar todas as informações usando os botões (título, estúdio, tags, classificação) e até trocar as imagens de pôster e fundo (enviando um link ou fazendo upload).
+
+**4. ✅ Gerar:** Quando tudo estiver perfeito, clique em "Gerar Capa" e o bot a enviará para você em segundos!
+`;
+  
+  // Envia a mensagem com parse_mode 'Markdown' para o estilo funcionar
+  ctx.reply(helpMessage, { parse_mode: 'Markdown' });
+});
+
+
+// --- Comando /capa ---
+// (Este comando permanece protegido pelo checkPermission)
 bot.command('capa', checkPermission, async (ctx) => {
   try {
     const nomeDoAnime = ctx.message.text.replace('/capa', '').trim();
@@ -40,10 +70,10 @@ bot.command('capa', checkPermission, async (ctx) => {
     if (!resultadoApi.success) {
       return ctx.reply(`Falha ao buscar. A API retornou o erro: ${resultadoApi.error}`);
     }
-    
+
     const anime = resultadoApi.data;
     anime.classificacaoManual = null; 
-    
+
     // --- Define o Layout Padrao baseado na API ---
     const formato = anime.format ? String(anime.format).toUpperCase() : 'TV';
     if (formato === 'MOVIE') {
@@ -53,10 +83,10 @@ bot.command('capa', checkPermission, async (ctx) => {
     } else {
         anime.layout = 'TV';
     }
-    
+
     ctx.session.animeData = anime; 
-    
-    // --- *** MUDANCA: Define o estado e chama o MENU DE LAYOUT *** ---
+
+    // --- MUDANCA: Define o estado e chama o MENU DE LAYOUT ---
     ctx.session.state = 'layout_select'; // Define o estado
     await enviarMenuLayout(ctx); // Chama a primeira etapa
 
