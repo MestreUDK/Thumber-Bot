@@ -31,7 +31,7 @@ const checkPermission = (ctx, next) => {
   // Se for um estranho
   const username = ctx.from.username || 'N/A';
   console.log(`[Seguranca] Acesso BLOQUEADO: ID=${userId}, Nome=${username}`);
-  return ctx.reply('Desculpe, voce nao tem permissao para usar este bot.');
+  return ctx.reply('Desculpe, você não tem permissão para usar este bot.');
 };
 
 module.exports = { 
