@@ -1,12 +1,12 @@
 // ARQUIVO: src/drawing/bottomBar.js
-// (ATUALIZADO para os novos moldes de 45px de altura)
+// (ATUALIZADO com "Fluxo de Tags" inteligente entre as linhas)
 
 const Jimp = require('jimp');
 const fs = require('fs');
 const path = require('path');
 const { getRatingImageName } = require('../utils.js');
 
-// --- 1. Carrega o Dicionario de Tags ---
+// --- 1. Carrega o Dicionario de Tags (Sem mudancas) ---
 let tagConfig;
 try {
   const configPath = path.join(__dirname, '..', '..', 'tag_config.json');
@@ -16,11 +16,9 @@ try {
   tagConfig = { "DEFAULT": { "text": null, "color": "tag_cinza_claro.png" } };
 }
 
-// --- 2. Cache de Moldes de Tag (ATUALIZADO) ---
+// --- 2. Cache de Moldes de Tag (Sem mudancas) ---
 const tagMolds = {};
-// ATUALIZADO: Largura do canto = 22px (Raio de 50% de 45px de altura)
 const cantoLargura = 22; 
-// ATUALIZADO: Largura do miolo = 16px (Baseado no seu molde de 60px: 60 - 22 - 22 = 16)
 const meioLargura = 16; 
 
 async function getTagSlices(moldName) {
@@ -31,7 +29,6 @@ async function getTagSlices(moldName) {
     const moldPath = path.join(__dirname, '..', '..', 'assets', 'tags', moldName);
     const mold = await Jimp.read(moldPath);
     const slices = {
-      // ATUALIZADO: Corta com 45px de altura
       left: mold.clone().crop(0, 0, cantoLargura, 45),
       middle: mold.clone().crop(cantoLargura, 0, meioLargura, 45),
       right: mold.clone().crop(cantoLargura + meioLargura, 0, cantoLargura, 45)
@@ -44,75 +41,100 @@ async function getTagSlices(moldName) {
   }
 }
 
-// --- 3. Funcao de desenhar uma linha de tags ---
-async function drawTagLine(image, tags, fonts, startX, startY, maxWidth) {
-  const { fontTagTV } = fonts;
-  // ATUALIZADO: Altura da tag
-  const tagHeight = 45; 
-  const tagPaddingHorizontal = 15;
-  const spaceBetween = 10;
-  let currentTagX = startX;
+// --- *** FUNCAO 'drawTagLine' REMOVIDA *** ---
+// (Nao precisamos mais dela, a logica estara dentro da 'drawBottomBar')
 
-  for (const genero of tags) {
-    const generoUpper = genero.toUpperCase();
-    const config = tagConfig[generoUpper] || tagConfig["DEFAULT"];
-    const genreText = (config.text || generoUpper).toUpperCase(); 
-    const moldName = config.color;
 
-    const textWidth = Jimp.measureText(fontTagTV, genreText);
-    const tagWidth = textWidth + (tagPaddingHorizontal * 2);
-
-    if (currentTagX + tagWidth > maxWidth) {
-       break; 
-    }
-
-    const slices = await getTagSlices(moldName);
-    if (slices) {
-      const meioWidth = tagWidth - (cantoLargura * 2);
-      image.composite(slices.left, currentTagX, startY);
-      if (meioWidth > 0) {
-          // ATUALIZADO: Redimensiona para 45px de altura
-          image.composite(slices.middle.clone().resize(meioWidth, tagHeight), currentTagX + cantoLargura, startY);
-      }
-      image.composite(slices.right, currentTagX + cantoLargura + meioWidth, startY);
-    }
-
-    // ATUALIZADO: Calcula o Y do texto baseado na nova altura de 45px
-    const textY = startY + (tagHeight - Jimp.measureTextHeight(fontTagTV, genreText, tagWidth)) / 2;
-    image.print(fontTagTV, currentTagX + tagPaddingHorizontal, textY, genreText);
-    currentTagX += tagWidth + spaceBetween;
-  }
-  return currentTagX;
-}
-
-// --- 4. Funcao Principal de Desenhar a Barra ---
+// --- 4. Funcao Principal de Desenhar a Barra (LOGICA ATUALIZADA) ---
 async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura) { 
-  const { fontEstudioTV } = fonts;
+  const { fontEstudioTV, fontTagTV } = fonts;
 
   const classificationHeight = 60;
-  // ATUALIZADO: Altura da tag
   const tagHeight = 45; 
   const spaceBetween = 10; 
   const spaceBetweenLines = 15; 
-  const generos = anime.genres || [];
+  const tagPaddingHorizontal = 15; // Padding interno da tag
 
-  // --- POSICOES (As formulas sao dinamicas, vao se ajustar sozinhas) ---
+  // --- POSICOES ---
+  // Linha 1 = A linha de baixo, junto com a classificacao
   const line1Y = altura - padding - classificationHeight + (classificationHeight / 2) - (tagHeight / 2);
   const classificationY = altura - padding - classificationHeight;
+  // Linha 2 = A linha acima da Linha 1
   const line2Y = line1Y - tagHeight - spaceBetweenLines;
 
+  // O Estudio fica acima de tudo
   const estudio = anime.studios.nodes.length > 0 ? anime.studios.nodes[0].name : 'Estudio desconhecido';
   const studioTextHeight = Jimp.measureTextHeight(fontEstudioTV, estudio, textAreaWidth);
   const studioY = line2Y - studioTextHeight - spaceBetween;
 
-  // --- DESENHAR ---
+  // --- 1. Desenha o Estudio (fica la em cima) ---
   image.print(fontEstudioTV, padding, studioY, estudio, textAreaWidth); 
 
-  const tagsLinha2 = generos.slice(4, 6); 
-  await drawTagLine(image, tagsLinha2, fonts, padding, line2Y, textAreaWidth);
+  
+  // --- 2. LOGICA DE FLUXO DE TAGS ---
+  const generos = anime.genres ? anime.genres.slice(0, 6) : []; // Limita a 6 tags no total
+  
+  let currentTagX = padding;
+  let currentTagY = line1Y; // Comecamos na Linha 1 (a de baixo)
+  let onSecondLine = false; // Flag para saber se ja pulamos de linha
 
-  const tagsLinha1 = generos.slice(0, 4);
-  const nextTagX = await drawTagLine(image, tagsLinha1, fonts, padding, line1Y, textAreaWidth);
+  for (const genero of generos) {
+    // Calcula o tamanho da tag
+    const generoUpper = genero.toUpperCase();
+    const config = tagConfig[generoUpper] || tagConfig["DEFAULT"];
+    const genreText = (config.text || generoUpper).toUpperCase(); 
+    const moldName = config.color;
+    const textWidth = Jimp.measureText(fontTagTV, genreText);
+    const tagWidth = textWidth + (tagPaddingHorizontal * 2);
+
+    // Verifica se a tag cabe na linha ATUAL
+    if (currentTagX + tagWidth > textAreaWidth + padding) {
+      
+      // Se nao coube, e ja estamos na segunda linha, paramos tudo.
+      if (onSecondLine) {
+        break; 
+      }
+
+      // Se nao coube, e estamos na primeira linha, pulamos para a segunda.
+      currentTagY = line2Y;     // Move o Y para a Linha 2
+      currentTagX = padding;    // Reseta o X
+      onSecondLine = true;      // Ativa a flag
+
+      // Verifica se a tag cabe na segunda linha (caso a tag seja gigante)
+      if (currentTagX + tagWidth > textAreaWidth + padding) {
+        break; // Nao cabe nem na linha nova, desiste
+      }
+    }
+
+    // --- Desenha a Tag (na posicao (X, Y) calculada) ---
+    const slices = await getTagSlices(moldName);
+    if (slices) {
+      const meioWidth = tagWidth - (cantoLargura * 2);
+      image.composite(slices.left, currentTagX, currentTagY);
+      if (meioWidth > 0) {
+          image.composite(slices.middle.clone().resize(meioWidth, tagHeight), currentTagX + cantoLargura, currentTagY);
+      }
+      image.composite(slices.right, currentTagX + cantoLargura + meioWidth, currentTagY);
+    }
+    
+    const textY = currentTagY + (tagHeight - Jimp.measureTextHeight(fontTagTV, genreText, tagWidth)) / 2;
+    image.print(fontTagTV, currentTagX + tagPaddingHorizontal, textY, genreText);
+    
+    // Atualiza o X para a proxima tag
+    currentTagX += tagWidth + spaceBetween;
+  }
+  
+  // --- 3. Desenha a Classificacao ---
+  
+  // Define onde a classificacao vai comecar
+  let ratingX = padding;
+  if (!onSecondLine) {
+    // Se ainda estamos na primeira linha, coloca a classificacao
+    // logo depois da ultima tag desenhada.
+    ratingX = currentTagX; 
+  }
+  // (Se ja pulamos para a segunda linha, a classificacao
+  // sera desenhada no comeco (padding) da Linha 1)
 
   if (anime.classificacaoManual) { 
     const ratingFileName = getRatingImageName(anime.classificacaoManual);
@@ -122,8 +144,7 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
         const ratingImage = await Jimp.read(ratingImagePath);
         ratingImage.resize(Jimp.AUTO, classificationHeight);
 
-        const ratingX = nextTagX; 
-
+        // Verifica se a classificacao cabe
         if (ratingX + ratingImage.bitmap.width < textAreaWidth + padding) {
             image.composite(ratingImage, ratingX, classificationY);
         }
@@ -132,4 +153,4 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
   }
 }
 
-module.exports = { drawBottomBar };
+module.Dexports = { drawBottomBar };
