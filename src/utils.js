@@ -6,7 +6,7 @@ function traduzirTemporada(season) {
   if (!season) return '';
   switch (season.toUpperCase()) {
     case 'SPRING': return 'PRIMAVERA';
-    case 'SUMMER': return 'VERAO';
+    case 'SUMMER': return 'VERÃO';
     case 'FALL': return 'OUTONO';
     case 'WINTER': return 'INVERNO';
     default: return season;
