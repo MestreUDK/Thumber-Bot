@@ -1,37 +1,45 @@
 // ARQUIVO: src/image.js
-// (AGORA E O "DIRETOR" - Atualizado para carregar a fonte 108px e chamar os modelos)
+// (ATUALIZADO: Carregando as fontes 'Roboto-Bold' 27 e 25)
 
 const Jimp = require('jimp');
 const path = require('path');
 const Modelos = require('./models'); // Importa nossos modelos (tv.js, filme.js, etc.)
 
 // --- 1. CARREGAMENTO DE FONTES (ATUALIZADO) ---
-let fontTitulo, fontInfo, fontTag, fontFilme; // Adicionada fontFilme
+let fontTitulo, fontInfo, fontTag, fontFilme; 
 
 async function carregarFontes() {
+  // Se ja carregou tudo, nao faz de novo
   if (fontTitulo && fontInfo && fontTag && fontFilme) {
     return;
   }
   try {
-    console.log('Carregando fontes personalizadas (4 fontes)...');
+    console.log('Carregando fontes personalizadas (Bold)...');
     fontTitulo = await Jimp.loadFont(path.join(__dirname, '..', 'assets', 'fonts', 'boogaloo_40.fnt'));
-    fontInfo = await Jimp.loadFont(path.join(__dirname, '..', 'assets', 'fonts', 'roboto_27.fnt'));
-    fontTag = await Jimp.loadFont(path.join(__dirname, '..', 'assets', 'fonts', 'roboto_25.fnt'));
-    // Carrega a nova fonte 108px que voce upou
+    
+    // --- *** MUDANCA ESTA AQUI *** ---
+    // Trocamos 'roboto_27.fnt' por 'roboto_bold_27.fnt'
+    fontInfo = await Jimp.loadFont(path.join(__dirname, '..', 'assets', 'fonts', 'roboto_bold_27.fnt')); 
+    // Trocamos 'roboto_25.fnt' por 'roboto_bold_25.fnt'
+    fontTag = await Jimp.loadFont(path.join(__dirname, '..', 'assets', 'fonts', 'roboto_bold_25.fnt')); 
+    // --- *** FIM DA MUDANCA *** ---
+    
     fontFilme = await Jimp.loadFont(path.join(__dirname, '..', 'assets', 'fonts', 'boogaloo_108.fnt')); 
     
     console.log('Fontes carregadas com sucesso.');
   } catch (err) {
     console.error('ERRO CRITICO AO CARREGAR FONTES:', err);
     console.log('Usando fontes padrao como fallback...');
+    // Fallbacks (caso os arquivos novos falhem)
     fontTitulo = await Jimp.loadFont(Jimp.FONT_SANS_64_WHITE);
     fontInfo = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE);
     fontTag = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE);
-    fontFilme = await Jimp.loadFont(Jimp.FONT_SANS_64_WHITE); // Fallback
+    fontFilme = await Jimp.loadFont(Jimp.FONT_SANS_64_WHITE);
   }
 }
 
 // --- 2. GERADOR DE CAPA (O "DIRETOR") ---
+// (Nenhuma mudanca nesta funcao)
 async function gerarCapa(anime) {
   try {
     await carregarFontes();
@@ -45,7 +53,6 @@ async function gerarCapa(anime) {
     // Cria a imagem base
     const image = new Jimp(largura, altura, '#000000');
     
-    // --- *** A MAGICA DA MODULARIZACAO *** ---
     // Escolhe o "artista" (modelo) baseado no que foi salvo na sessao
     switch (anime.layout) {
       case 'FILME':
