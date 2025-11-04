@@ -1,9 +1,10 @@
 // ARQUIVO: src/models/filme.js
-// (CORRIGIDO: Esta versao estava faltando)
+// (ATUALIZADO: Agora usa o 'bottomBar' para desenhar so a classificacao)
 
 const Jimp = require('jimp');
 const { drawPoster } = require('../drawing/poster.js'); 
-const { drawClassification } = require('../drawing/classification.js'); // <-- O import que faltava
+// --- *** MUDANCA: Importa o novo 'bottomBar.js' *** ---
+const { drawBottomBar } = require('../drawing/bottomBar.js'); 
 
 async function draw(image, anime, fonts, consts) {
   const { largura, altura, padding } = consts;
@@ -32,8 +33,9 @@ async function draw(image, anime, fonts, consts) {
     altura          
   );
   
-  // 5. Desenha a Classificacao
-  await drawClassification(image, anime, padding, altura);
+  // 5. Desenha a Barra Inferior (que so vai desenhar a classificacao)
+  // (Como o "anime" nao tera 'studios' ou 'genres' no modo filme, ele so desenha o A14)
+  await drawBottomBar(image, anime, fonts, padding, textoAreaLargura, altura);
 }
 
 module.exports = { draw };
