@@ -1,5 +1,5 @@
 // ARQUIVO: src/confirmation.js
-// (Atualizado com o novo menu de classificacao)
+// (Atualizado com o novo menu de classificacao E o botao "Editar Info")
 
 const { Markup } = require('telegraf');
 const { traduzirTemporada } = require('./utils.js');
@@ -33,7 +33,7 @@ Modelo Atual: ` + "```" + `${layout}` + "```" + `
 }
 
 
-// --- FUNCAO 2: Menu de Edicao COMPLETO (TV/ONA) (Sem alteracao) ---
+// --- FUNCAO 2: Menu de Edicao COMPLETO (TV/ONA) (ATUALIZADO) ---
 async function enviarMenuEdicaoCompleto(ctx) {
   const animeData = ctx.session.animeData;
   if (!animeData) {
@@ -42,12 +42,16 @@ async function enviarMenuEdicaoCompleto(ctx) {
 
   const titulo = (animeData.title && animeData.title.romaji) || "N/A";
   const estudio = (animeData.studios && animeData.studios.nodes.length > 0) ? animeData.studios.nodes[0].name : 'N/A';
+  
+  // --- *** NOVA LOGICA PARA INFO *** ---
   const temporada = animeData.season ? `${traduzirTemporada(animeData.season)} ${animeData.seasonYear}` : "N/A";
   const episodios = animeData.episodes || '??';
+  const infoLinha = (animeData.infoManual !== null && animeData.infoManual !== undefined) 
+      ? animeData.infoManual 
+      : `${temporada} - ${episodios} EPISÓDIOS`; // Mantem seu formato de info
+      
   const tags = (animeData.genres && animeData.genres.length > 0) ? animeData.genres.join(', ') : 'N/A';
-  
-  // --- MUDANCA AQUI: Exibe "Nenhuma" se for null ---
-  const classificacao = animeData.classificacaoManual || 'Nenhuma';
+  const classificacao = animeData.classificacaoManual || 'Nenhuma'; // Mantem sua logica
   const layout = animeData.layout || 'TV'; 
 
   const texto = `
@@ -57,25 +61,27 @@ Confirme os dados (Estes dados serão usados na imagem):
 Layout: ${layout}
 Título: ${titulo}
 Estúdio: ${estudio}
-Info: ${temporada} - ${episodios} EPISÓDIOS 
+Info: ${infoLinha} 
 Tags: ${tags}
 Classificação: ${classificacao}
 ` + "```" + `
 `;
 
+  // --- *** BOTOES ATUALIZADOS *** ---
   const botoes = Markup.inlineKeyboard([
     [ Markup.button.callback('✅ Gerar Capa Agora!', 'generate_final') ],
     [ 
       Markup.button.callback('Editar Título', 'edit_title'),
-      Markup.button.callback('Editar Estúdio', 'edit_studio')
+      Markup.button.callback('Editar Info', 'edit_info') // <-- BOTAO NOVO
     ],
     [ 
-      Markup.button.callback('Editar Tags', 'edit_tags'),
-      Markup.button.callback('Editar Classificação', 'edit_rating') // Este botao agora vai chamar o novo menu
+      Markup.button.callback('Editar Estúdio', 'edit_studio'),
+      Markup.button.callback('Editar Tags', 'edit_tags')
     ],
     [ 
-      Markup.button.callback('🖼️ Editar Pôster', 'edit_poster'),
-      Markup.button.callback('🌆 Editar Fundo', 'edit_fundo')
+      Markup.button.callback('Editar Classificação', 'edit_rating'), // Este botao agora vai chamar o novo menu
+      Markup.button.callback('🖼️ Pôster', 'edit_poster'), // Encurtado
+      Markup.button.callback('🌆 Fundo', 'edit_fundo') // Encurtado
     ],
     [ 
       Markup.button.callback('⬅️ Voltar (Layout)', 'voltar_layout'),
@@ -100,8 +106,6 @@ async function enviarMenuEdicaoFilme(ctx) {
   }
 
   const titulo = (animeData.title && animeData.title.romaji) || "N/A";
-  
-  // --- MUDANCA AQUI: Exibe "Nenhuma" se for null ---
   const classificacao = animeData.classificacaoManual || 'Nenhuma';
   const layout = animeData.layout || 'FILME'; 
 
@@ -140,6 +144,7 @@ Classificação: ${classificacao}
 }
 
 // --- *** FUNCAO 4: NOVO MENU DE CLASSIFICACAO *** ---
+// (Sem alteracao, mantido como voce enviou)
 async function enviarMenuClassificacao(ctx) {
   const classificacaoAtual = ctx.session.animeData.classificacaoManual || 'Nenhuma';
 
