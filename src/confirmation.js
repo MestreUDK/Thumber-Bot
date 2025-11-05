@@ -170,3 +170,53 @@ Atual: ` + "```" + `${classificacaoAtual}` + "```" + `
     ],
     [
       Markup.button.callback('⬅️ Voltar para Edição', 'voltar_edicao_principal')
+    ]
+  ]);
+
+  try {
+    if (ctx.callbackQuery) {
+      await ctx.deleteMessage();
+    }
+  } catch (e) { /* ignora */ }
+
+  await ctx.reply(texto, botoes);
+}
+
+// --- FUNCAO 5: NOVO MENU DE FONTE DE DADOS (ATUALIZADO) ---
+async function enviarMenuFonteDados(ctx) {
+  const nomeDoAnime = ctx.session.searchTitle || "Anime Desconhecido";
+
+  const texto = `
+Como você quer obter os dados para:
+` + "```" + `${nomeDoAnime}` + "```" + `
+`;
+
+  // --- *** MUDANÇA NOS TEXTOS DOS BOTÕES *** ---
+  const botoes = Markup.inlineKeyboard([
+    [
+      Markup.button.callback('Anilist', 'source_anilist'), // <-- TEXTO MUDADO
+      Markup.button.callback('Manual', 'source_manual')    // <-- TEXTO MUDADO
+    ],
+    [
+      Markup.button.callback('❌ Cancelar Busca', 'cancel_edit')
+    ]
+  ]);
+  // --- FIM DA MUDANÇA ---
+
+  try {
+    if (ctx.callbackQuery) {
+      await ctx.deleteMessage();
+    }
+  } catch (e) { /* ignora */ }
+
+  await ctx.reply(texto, botoes);
+}
+
+
+module.exports = { 
+  enviarMenuLayout,
+  enviarMenuEdicao: enviarMenuEdicaoCompleto,
+  enviarMenuEdicaoFilme,
+  enviarMenuClassificacao,
+  enviarMenuFonteDados
+};
