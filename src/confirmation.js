@@ -70,15 +70,15 @@ Classificação: ${classificacao}
   const botoes = Markup.inlineKeyboard([
     [ Markup.button.callback('✅ Gerar Capa Agora!', 'generate_final') ],
     [ 
-      Markup.button.callback('Editar Título', 'edit_title'),
-      Markup.button.callback('Editar Info', 'edit_info')
+      Markup.button.callback('🏷️ Título', 'edit_title'),
+      Markup.button.callback('ℹ️ Info', 'edit_info')
     ],
     [ 
-      Markup.button.callback('Editar Estúdio', 'edit_studio'),
-      Markup.button.callback('Editar Tags', 'edit_tags')
+      Markup.button.callback('🎥 Estúdio', 'edit_studio'),
+      Markup.button.callback('🎭 Tags', 'edit_tags')
     ],
     [ 
-      Markup.button.callback('Editar Classificação', 'edit_rating')
+      Markup.button.callback('🚦 Classificação', 'edit_rating')
     ],
     [ 
       Markup.button.callback('🖼️ Pôster', 'edit_poster'),
@@ -123,8 +123,8 @@ Classificação: ${classificacao}
   const botoes = Markup.inlineKeyboard([
     [ Markup.button.callback('✅ Gerar Capa Agora!', 'generate_final') ],
     [ 
-      Markup.button.callback('Editar Título', 'edit_title'),
-      Markup.button.callback('Editar Classificação', 'edit_rating')
+      Markup.button.callback('🏷️ Título', 'edit_title'),
+      Markup.button.callback('🚦 Classificação', 'edit_rating')
     ],
     [ 
       Markup.button.callback('🖼️ Editar Pôster', 'edit_poster')
@@ -194,8 +194,8 @@ Como você quer obter os dados para:
   // --- *** MUDANÇA NOS TEXTOS DOS BOTÕES *** ---
   const botoes = Markup.inlineKeyboard([
     [
-      Markup.button.callback('Anilist', 'source_anilist'), // <-- TEXTO MUDADO
-      Markup.button.callback('Manual', 'source_manual')    // <-- TEXTO MUDADO
+      Markup.button.callback('🔗 Anilist', 'source_anilist'), // <-- TEXTO MUDADO
+      Markup.button.callback('✍️ Manual', 'source_manual')    // <-- TEXTO MUDADO
     ],
     [
       Markup.button.callback('❌ Cancelar Busca', 'cancel_edit')
