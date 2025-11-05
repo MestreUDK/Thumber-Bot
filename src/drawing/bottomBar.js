@@ -1,5 +1,5 @@
 // ARQUIVO: src/drawing/bottomBar.js
-// (ATUALIZADO: Bloco inferior movido para cima)
+// (ATUALIZADO: Altura da classificação aumentada)
 
 const Jimp = require('jimp');
 const fs = require('fs');
@@ -45,27 +45,22 @@ async function getTagSlices(moldName) {
 async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura) { 
   const { fontEstudioTV, fontTagTV } = fonts;
 
-  const classificationHeight = 60;
+  // --- *** MUDANCA AQUI *** ---
+  const classificationHeight = 65; // Aumentado de 60 para 65
+  // --- *** FIM DA MUDANCA *** ---
+
   const tagHeight = 45; 
   const spaceBetween = 10; 
   const spaceBetweenLines = 15; 
   const tagPaddingHorizontal = 15; 
 
-  // --- *** MUDANÇA NO CALCULO DAS POSICOES Y *** ---
-  
-  // 1. Calcula a posicao Y da Linha 1 (a de baixo)
-  // Ela agora comeca onde a Linha 2 costumava comecar.
-  const line1Y = (altura - padding - classificationHeight + (classificationHeight / 2) - (tagHeight / 2)) // Ponto central da Linha 1 antiga
-                 - tagHeight - spaceBetweenLines; // Move ela para cima (para a pos da Linha 2 antiga)
+  // --- Calculo das posicoes Y (vai se ajustar automaticamente) ---
+  const line1Y = (altura - padding - classificationHeight + (classificationHeight / 2) - (tagHeight / 2))
+                 - tagHeight - spaceBetweenLines; 
 
-  // 2. Calcula a posicao Y da Classificacao (alinhada com a nova line1Y)
-  // (A tag [line1Y] tem 45px, a classificacao [classificationY] tem 60px)
   const classificationY = line1Y - (classificationHeight / 2) + (tagHeight / 2);
-
-  // 3. Calcula a posicao Y da Linha 2 (agora ainda mais acima)
   const line2Y = line1Y - tagHeight - spaceBetweenLines;
 
-  // 4. Calcula a posicao Y do Estudio (acima de tudo)
   const estudio = anime.studios.nodes.length > 0 ? anime.studios.nodes[0].name : 'Estudio desconhecido';
   const studioTextHeight = Jimp.measureTextHeight(fontEstudioTV, estudio, textAreaWidth);
   const studioY = line2Y - studioTextHeight - spaceBetween;
@@ -75,7 +70,7 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
   // --- 1. Desenha o Estudio ---
   image.print(fontEstudioTV, padding, studioY, estudio, textAreaWidth); 
 
-  
+
   // --- 2. DESENHA A CLASSIFICACAO (PRIORIDADE) ---
   let tagsStartX_Line1 = padding; 
 
@@ -85,7 +80,9 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
       try {
         const ratingImagePath = path.join(__dirname, '..', '..', 'assets', 'classificacao', ratingFileName);
         const ratingImage = await Jimp.read(ratingImagePath);
-        ratingImage.resize(Jimp.AUTO, classificationHeight);
+        
+        // Vai redimensionar para os 65px definidos acima
+        ratingImage.resize(Jimp.AUTO, classificationHeight); 
 
         const ratingX = padding;
         const ratingWidth = ratingImage.bitmap.width;
@@ -100,9 +97,9 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
 
   // --- 3. LOGICA DE FLUXO DE TAGS ---
   const generos = anime.genres ? anime.genres.slice(0, 6) : []; 
-  
+
   let currentTagX = tagsStartX_Line1; 
-  let currentTagY = line1Y; // Comecamos na Linha 1 (agora mais acima)
+  let currentTagY = line1Y;
   let onSecondLine = false; 
 
   for (const genero of generos) {
@@ -117,7 +114,7 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
       if (onSecondLine) {
         break; 
       }
-      currentTagY = line2Y; // Pula para a Linha 2 (ainda mais acima)
+      currentTagY = line2Y;
       currentTagX = padding;
       onSecondLine = true;
 
