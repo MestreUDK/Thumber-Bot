@@ -1,10 +1,9 @@
 // ARQUIVO: src/models/ona.js
-// (ATUALIZADO: Chama o novo 'drawBottomBar')
+// (ATUALIZADO: Ordem de desenho invertida)
 
 const { drawBackground } = require('../drawing/background.js');
 const { drawPoster } = require('../drawing/poster.js');
 const { drawText } = require('../drawing/text.js');
-// --- *** MUDANCA: Importa o novo 'bottomBar.js' *** ---
 const { drawBottomBar } = require('../drawing/bottomBar.js');
 
 async function draw(image, anime, fonts, consts) {
@@ -14,16 +13,21 @@ async function draw(image, anime, fonts, consts) {
   animeONA.season = 'ONA';
   animeONA.seasonYear = ''; 
 
-  await drawBackground(image, animeONA.bannerImage, largura, altura);
+  // --- *** MUDANCA DE ORDEM *** ---
+  // 1. Desenha o Poster PRIMEIRO para saber a largura dele
   const posterWidth = await drawPoster(image, animeONA.coverImage.large, largura, altura, padding);
+  
+  // 2. Desenha o Fundo AGORA, passando o posterWidth
+  await drawBackground(image, animeONA.bannerImage, largura, altura, posterWidth);
+  // --- *** FIM DA MUDANCA *** ---
+
+  // 3. Calcula a area de texto (restante)
   const textoAreaLargura = largura - posterWidth - (padding * 2);
-  
-  // --- ORDEM DE DESENHO ATUALIZADA ---
-  
-  // 1. Textos (Info, Titulo) - Ficam no TOPO
+
+  // 4. Textos (Info, Titulo) - Ficam no TOPO
   await drawText(image, animeONA, fonts, padding, textoAreaLargura);
-  
-  // 2. Barra Inferior (Estudio, 6 Tags, Classificacao)
+
+  // 5. Barra Inferior (Estudio, 6 Tags, Classificacao)
   await drawBottomBar(image, animeONA, fonts, padding, textoAreaLargura, altura);
 }
 
