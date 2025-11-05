@@ -1,5 +1,5 @@
 // ARQUIVO: src/drawing/background.js
-// (ATUALIZADO: Fundo ajustado com 'contain()' para evitar cortes)
+// (ATUALIZADO: Fundo ajustado com 'resize()' para preencher totalmente, permitindo distorção)
 
 const Jimp = require('jimp');
 
@@ -10,13 +10,11 @@ async function drawBackground(image, bannerUrl, width, height, posterWidth) {
   if (bannerUrl) {
     const banner = await Jimp.read(bannerUrl);
     
-    // *** MUDANÇA AQUI: De .cover() para .contain() ***
-    // .contain() vai redimensionar o banner para CABER DENTRO da area (backgroundWidth, height)
-    // Se a proporção for diferente, ele deixará barras (preenchidas com preto)
-    // para não cortar o conteúdo da imagem original.
-    banner.contain(backgroundWidth, height);
+    // *** MUDANÇA AQUI: De .contain() para .resize() ***
+    // .resize() vai esticar ou encolher a imagem para preencher exatamente
+    // backgroundWidth x height, mesmo que isso cause distorção da proporção original.
+    banner.resize(backgroundWidth, height);
     
-    // Compõe a imagem do banner na posição (0,0)
     image.composite(banner, 0, 0); 
   }
 
