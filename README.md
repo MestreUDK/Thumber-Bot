@@ -1,4 +1,4 @@
-# 🤖 Thumber Bot (v1.2.4)
+# 🤖 Thumber Bot (v1.2)
 
 Um bot robusto para Telegram focado em gerar capas (thumbnails) personalizadas para postagens de anime, de forma rápida e intuitiva. O bot busca dados reais de animes, permite edição completa através de um menu interativo e gera uma imagem de alta qualidade (1280x720) pronta para uso.
 
