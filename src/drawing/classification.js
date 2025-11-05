@@ -14,7 +14,7 @@ async function drawClassification(image, anime, padding, height) {
       // Sobe 2 niveis (de src/drawing para a raiz) e desce para assets/
       const ratingImagePath = path.join(__dirname, '..', '..', 'assets', 'classificacao', ratingFileName);
       const ratingImage = await Jimp.read(ratingImagePath);
-      ratingImage.resize(Jimp.AUTO, 60);
+      ratingImage.resize(Jimp.AUTO, 80);
       
       const ratingX = padding;
       const ratingY = height - ratingImage.bitmap.height - padding; 
