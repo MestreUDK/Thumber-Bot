@@ -72,7 +72,10 @@ bot.command('capa', checkPermission, async (ctx) => {
     }
 
     const anime = resultadoApi.data;
+    
+    // --- *** LINHAS DE INICIALIZAÇÃO *** ---
     anime.classificacaoManual = null; 
+    anime.infoManual = null; // <-- ADICIONADO PARA A NOVA FEATURE
 
     // --- Define o Layout Padrao baseado na API ---
     const formato = anime.format ? String(anime.format).toUpperCase() : 'TV';
