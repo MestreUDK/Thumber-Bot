@@ -156,14 +156,14 @@ Atual: ` + "```" + `${classificacaoAtual}` + "```" + `
 
   const botoes = Markup.inlineKeyboard([
     [
-      Markup.button.callback('L (Livre)', 'set_rating_L'),
-      Markup.button.callback('A10', 'set_rating_10'),
-      Markup.button.callback('A12', 'set_rating_12')
+      Markup.button.callback('🟩 Livre', 'set_rating_L'),
+      Markup.button.callback('🟦 A10', 'set_rating_10'),
+      Markup.button.callback('🟨 A12', 'set_rating_12')
     ],
     [
-      Markup.button.callback('A14', 'set_rating_14'),
-      Markup.button.callback('A16', 'set_rating_16'),
-      Markup.button.callback('A18', 'set_rating_18')
+      Markup.button.callback('🟧 A14', 'set_rating_14'),
+      Markup.button.callback('🟥 A16', 'set_rating_16'),
+      Markup.button.callback('⬛ A18', 'set_rating_18')
     ],
     [
       Markup.button.callback('Remover (Sem Classificação)', 'set_rating_NONE')
