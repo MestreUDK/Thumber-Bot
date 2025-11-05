@@ -1,5 +1,5 @@
 // ARQUIVO: src/confirmation.js
-// (Atualizado com o novo menu de classificacao E o botao "Editar Info")
+// (Atualizado com o novo menu de classificacao E o botao "Editar Info".)
 
 const { Markup } = require('telegraf');
 const { traduzirTemporada } = require('./utils.js');
