@@ -1,10 +1,10 @@
 // ARQUIVO: src/confirmation.js
-// (Adicionada a nova função 'enviarMenuFonteDados')
+// (Botões 'Anilist' e 'Manual' com texto simplificado)
 
 const { Markup } = require('telegraf');
 const { traduzirTemporada } = require('./utils.js');
 
-// --- FUNCAO 1: Menu de Escolha de Layout (ATUALIZADO) ---
+// --- FUNCAO 1: Menu de Escolha de Layout (Sem alteração) ---
 async function enviarMenuLayout(ctx) {
   const layout = ctx.session.animeData.layout || 'TV';
 
@@ -21,7 +21,6 @@ Modelo Atual: ` + "```" + `${layout}` + "```" + `
       Markup.button.callback('ONA', 'set_layout_ONA')
     ],
     [ Markup.button.callback('Próximo Passo (Editar Dados) ➡️', 'ir_para_edicao') ],
-    // --- *** NOVO BOTAO VOLTAR ADICIONADO *** ---
     [ Markup.button.callback('⬅️ Voltar (Fonte de Dados)', 'voltar_source_select') ] 
   ]);
 
@@ -100,7 +99,7 @@ Classificação: ${classificacao}
   await ctx.reply(texto, botoes);
 }
 
-// --- FUNCAO 3: Menu de Edicao SIMPLES (Filme) (Sem alteracao) ---
+// --- FUNCAO 3: Menu de Edicao SIMPLES (Filme) (Sem alteração) ---
 async function enviarMenuEdicaoFilme(ctx) {
   const animeData = ctx.session.animeData;
   if (!animeData) {
@@ -145,7 +144,7 @@ Classificação: ${classificacao}
   await ctx.reply(texto, botoes);
 }
 
-// --- FUNCAO 4: MENU DE CLASSIFICACAO (Sem alteracao) ---
+// --- FUNCAO 4: MENU DE CLASSIFICACAO (Sem alteração) ---
 async function enviarMenuClassificacao(ctx) {
   const classificacaoAtual = ctx.session.animeData.classificacaoManual || 'Nenhuma';
 
@@ -171,52 +170,3 @@ Atual: ` + "```" + `${classificacaoAtual}` + "```" + `
     ],
     [
       Markup.button.callback('⬅️ Voltar para Edição', 'voltar_edicao_principal')
-    ]
-  ]);
-
-  try {
-    if (ctx.callbackQuery) {
-      await ctx.deleteMessage();
-    }
-  } catch (e) { /* ignora */ }
-
-  await ctx.reply(texto, botoes);
-}
-
-// --- *** FUNCAO 5: NOVO MENU DE FONTE DE DADOS *** ---
-async function enviarMenuFonteDados(ctx) {
-  const nomeDoAnime = ctx.session.searchTitle || "Anime Desconhecido";
-
-  const texto = `
-Como você quer obter os dados para:
-` + "```" + `${nomeDoAnime}` + "```" + `
-`;
-
-  // Botei uns emojis para ficar mais claro
-  const botoes = Markup.inlineKeyboard([
-    [
-      Markup.button.callback('Buscar no AniList 🤖', 'source_anilist'),
-      Markup.button.callback('Preencher Manualmente ✏️', 'source_manual')
-    ],
-    [
-      Markup.button.callback('❌ Cancelar Busca', 'cancel_edit') // Reutiliza o 'cancel_edit'
-    ]
-  ]);
-
-  try {
-    if (ctx.callbackQuery) {
-      await ctx.deleteMessage();
-    }
-  } catch (e) { /* ignora */ }
-
-  await ctx.reply(texto, botoes);
-}
-
-
-module.exports = { 
-  enviarMenuLayout,
-  enviarMenuEdicao: enviarMenuEdicaoCompleto,
-  enviarMenuEdicaoFilme,
-  enviarMenuClassificacao,
-  enviarMenuFonteDados // <-- Exporta a nova funcao
-};
