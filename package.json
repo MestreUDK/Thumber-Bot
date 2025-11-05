@@ -1,6 +1,6 @@
 {
   "name": "bot-gerador-capa",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Bot para gerar capas de anime",
   "main": "bot.js",
   "scripts": {
