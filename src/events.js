@@ -1,14 +1,17 @@
 // ARQUIVO: src/events.js
-// (CORRIGIDO: Re-adicionada a linha 'const acao = ctx.match[0];')
+// (Atualizado com os novos handlers para a Etapa 0: Seleção de Fonte)
 
 const { gerarCapa } = require('./image.js');
+// --- *** IMPORTAÇÕES ATUALIZADAS *** ---
 const { 
   enviarMenuLayout, 
   enviarMenuEdicao, 
   enviarMenuEdicaoFilme, 
-  enviarMenuClassificacao
+  enviarMenuClassificacao,
+  enviarMenuFonteDados // Importa o novo menu
 } = require('./confirmation.js');
 const { traduzirTemporada } = require('./utils.js');
+const { buscarAnime } = require('./anilist.js'); // Importa o buscador da API
 
 // --- Funcao interna (Sem alteracao) ---
 async function irParaMenuEdicao(ctx) {
@@ -24,18 +27,90 @@ async function irParaMenuEdicao(ctx) {
 
 function registerEvents(bot, checkPermission) {
 
-  // --- ETAPA 1: BOTOES DE LAYOUT (CORRIGIDO) ---
+  // --- *** ETAPA 0: NOVOS HANDLERS DE FONTE DE DADOS *** ---
+  
+  bot.action('source_anilist', checkPermission, async (ctx) => {
+    try {
+      if (!ctx.session || ctx.session.state !== 'source_select') return ctx.answerCbQuery('Sessão expirada. Use /capa novamente.');
+
+      const nomeDoAnime = ctx.session.searchTitle;
+      if (!nomeDoAnime) return ctx.answerCbQuery('Nome do anime não encontrado na sessão.');
+      
+      await ctx.deleteMessage();
+      await ctx.reply(`Buscando dados no AniList para: ${nomeDoAnime}...`);
+      
+      // Chama a API (que antes estava no bot.js)
+      const resultadoApi = await buscarAnime(nomeDoAnime);
+
+      if (!resultadoApi.success) {
+        // Se falhar, avisa e volta para a seleção de fonte
+        await ctx.reply(`Falha ao buscar: ${resultadoApi.error}\n\nTente buscar manualmente.`);
+        return await enviarMenuFonteDados(ctx);
+      }
+
+      // Se der certo, preenche os dados
+      const anime = resultadoApi.data;
+      anime.classificacaoManual = null; 
+      anime.infoManual = null; 
+
+      const formato = anime.format ? String(anime.format).toUpperCase() : 'TV';
+      if (formato === 'MOVIE') {
+          anime.layout = 'FILME';
+      } else if (formato === 'ONA') {
+          anime.layout = 'ONA';
+      } else {
+          anime.layout = 'TV';
+      }
+
+      ctx.session.animeData = anime; 
+      ctx.session.state = 'layout_select'; // Proxima etapa (Layout)
+      await enviarMenuLayout(ctx);
+
+    } catch (err) { console.error('ERRO EM source_anilist:', err); }
+  });
+  
+  bot.action('source_manual', checkPermission, async (ctx) => {
+    try {
+      if (!ctx.session || ctx.session.state !== 'source_select') return ctx.answerCbQuery('Sessão expirada. Use /capa novamente.');
+      
+      const nomeDoAnime = ctx.session.searchTitle || "Anime Sem Título";
+      
+      // Cria um objeto de anime VAZIO, mas com a estrutura correta
+      const anime = {
+        title: { romaji: nomeDoAnime, english: null },
+        season: null,
+        seasonYear: null,
+        episodes: null,
+        studios: { nodes: [] }, // Array vazio para evitar erros
+        genres: [], // Array vazio
+        averageScore: null,
+        format: 'TV',
+        coverImage: { large: null },
+        bannerImage: null,
+        // Nossos campos customizados
+        classificacaoManual: null,
+        infoManual: null,
+        layout: 'TV' // Layout Padrão
+      };
+      
+      ctx.session.animeData = anime;
+      ctx.session.state = 'layout_select'; // Próxima etapa (Layout)
+      
+      await ctx.deleteMessage();
+      await ctx.reply('Modo de preenchimento manual ativado. Escolha o layout.');
+      await enviarMenuLayout(ctx);
+      
+    } catch (err) { console.error('ERRO EM source_manual:', err); }
+  });
+
+  // --- ETAPA 1: BOTOES DE LAYOUT (COM NOVO BOTAO VOLTAR) ---
 
   bot.action(['set_layout_TV', 'set_layout_FILME', 'set_layout_ONA'], checkPermission, async (ctx) => {
     if (ctx.session.state !== 'layout_select' || !ctx.session.animeData) {
         return ctx.answerCbQuery('Comando invalido. Use /capa primeiro.');
     }
-    
-    // --- *** A CORREÇÃO ESTÁ AQUI *** ---
-    const acao = ctx.match[0]; // Esta linha estava faltando
-    const novoLayout = acao.replace('set_layout_', ''); // Corrigido de 'aco' para 'acao'
-    // --- FIM DA CORREÇÃO ---
-
+    const acao = ctx.match[0];
+    const novoLayout = acao.replace('set_layout_', '');
     ctx.session.animeData.layout = novoLayout;
     await enviarMenuLayout(ctx);
   });
@@ -46,9 +121,20 @@ function registerEvents(bot, checkPermission) {
     await irParaMenuEdicao(ctx); 
   });
 
-  // --- ETAPA 2: BOTOES DE EDICAO (Sem alteracao) ---
+  // --- *** NOVO BOTAO VOLTAR *** ---
+  bot.action('voltar_source_select', checkPermission, async (ctx) => {
+    // Verifica se estamos no menu de layout
+    if (!ctx.session || ctx.session.state !== 'layout_select') return ctx.answerCbQuery();
+    
+    ctx.session.state = 'source_select'; // Volta para a Etapa 0
+    ctx.session.animeData = null; // Limpa os dados do anime (se houver)
+    await enviarMenuFonteDados(ctx); // Chama o menu da Etapa 0
+  });
+
+  // --- ETAPA 2: BOTOES DE EDICAO (Sem alteração) ---
 
   bot.action('voltar_layout', checkPermission, async (ctx) => {
+    // Este botão está no menu 'main_edit' e volta para 'layout_select'. Está CORRETO.
     if (!ctx.session || (ctx.session.state !== 'main_edit' && ctx.session.state !== 'awaiting_input' && ctx.session.state !== 'rating_select')) return ctx.answerCbQuery();
     ctx.session.state = 'layout_select';
     ctx.session.awaitingInput = null;
@@ -72,12 +158,12 @@ function registerEvents(bot, checkPermission) {
   });
 
   bot.action('cancel_edit', checkPermission, async (ctx) => {
-    ctx.session = null;
+    // Este 'cancelar' agora funciona para a Etapa 0 e Etapa 2
+    ctx.session = null; // Limpa TUDO
     await ctx.deleteMessage();
     await ctx.reply('Geracao cancelada.');
   });
 
-  // --- Lógica de pergunta (Sem alteracao) ---
   bot.action(['edit_title', 'edit_studio', 'edit_tags', 'edit_poster', 'edit_fundo', 'edit_info'], checkPermission, async (ctx) => {
     if (!ctx.session || ctx.session.state !== 'main_edit') return ctx.answerCbQuery();
     try {
@@ -122,7 +208,6 @@ function registerEvents(bot, checkPermission) {
     } catch (err) { console.error('ERRO NO BOTAO EDITAR:', err); }
   });
 
-  // --- Handler exclusivo para 'edit_rating' (Sem alteracao) ---
   bot.action('edit_rating', checkPermission, async (ctx) => {
     if (!ctx.session || ctx.session.state !== 'main_edit') return ctx.answerCbQuery('Estado invalido.');
     ctx.session.state = 'rating_select'; 
@@ -130,7 +215,7 @@ function registerEvents(bot, checkPermission) {
   });
 
 
-  // --- ETAPA 3: OUVIR AS RESPOSTAS (Sem alteracao) ---
+  // --- ETAPA 3: OUVIR AS RESPOSTAS (Sem alteração) ---
   bot.on('text', checkPermission, async (ctx) => {
     try {
       if (ctx.message.text.startsWith('/')) return; 
@@ -160,7 +245,6 @@ function registerEvents(bot, checkPermission) {
     } catch (err) { console.error('ERRO AO PROCESSAR TEXTO:', err); }
   });
 
-  // --- (Sem alteracao) ---
   bot.on('photo', checkPermission, async (ctx) => {
     try {
       if (ctx.session.state !== 'awaiting_input' || !ctx.session.animeData) { return; }
@@ -190,8 +274,7 @@ function registerEvents(bot, checkPermission) {
     } catch (err) { console.error('ERRO AO PROCESSAR FOTO:', err); }
   });
 
-  // --- ETAPA 4: HANDLERS DE CLASSIFICACAO (Sem alteracao) ---
-
+  // --- ETAPA 4: HANDLERS DE CLASSIFICACAO (Sem alteração) ---
   bot.action(
     [
       'set_rating_L', 'set_rating_10', 'set_rating_12', 
