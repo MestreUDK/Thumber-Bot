@@ -1,5 +1,5 @@
 // ARQUIVO: src/drawing/bottomBar.js
-// (ATUALIZADO: Altura da classificação aumentada)
+// (ATUALIZADO: Posição do Estúdio agora é condicional)
 
 const Jimp = require('jimp');
 const fs = require('fs');
@@ -45,33 +45,22 @@ async function getTagSlices(moldName) {
 async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura) { 
   const { fontEstudioTV, fontTagTV } = fonts;
 
-  // --- *** MUDANCA AQUI *** ---
-  const classificationHeight = 65; // Aumentado de 60 para 65
-  // --- *** FIM DA MUDANCA *** ---
-
+  const classificationHeight = 65;
   const tagHeight = 45; 
   const spaceBetween = 10; 
   const spaceBetweenLines = 15; 
   const tagPaddingHorizontal = 15; 
 
-  // --- Calculo das posicoes Y (vai se ajustar automaticamente) ---
+  // --- POSICOES Y ---
   const line1Y = (altura - padding - classificationHeight + (classificationHeight / 2) - (tagHeight / 2))
                  - tagHeight - spaceBetweenLines; 
-
   const classificationY = line1Y - (classificationHeight / 2) + (tagHeight / 2);
   const line2Y = line1Y - tagHeight - spaceBetweenLines;
 
-  const estudio = anime.studios.nodes.length > 0 ? anime.studios.nodes[0].name : 'Estudio desconhecido';
-  const studioTextHeight = Jimp.measureTextHeight(fontEstudioTV, estudio, textAreaWidth);
-  const studioY = line2Y - studioTextHeight - spaceBetween;
-  // --- FIM DA MUDANCA ---
+  // --- *** MUDANÇA: O código do Estúdio foi MOVIDO DAQUI para o final ---
 
 
-  // --- 1. Desenha o Estudio ---
-  image.print(fontEstudioTV, padding, studioY, estudio, textAreaWidth); 
-
-
-  // --- 2. DESENHA A CLASSIFICACAO (PRIORIDADE) ---
+  // --- 1. DESENHA A CLASSIFICACAO (PRIORIDADE) ---
   let tagsStartX_Line1 = padding; 
 
   if (anime.classificacaoManual) { 
@@ -80,9 +69,7 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
       try {
         const ratingImagePath = path.join(__dirname, '..', '..', 'assets', 'classificacao', ratingFileName);
         const ratingImage = await Jimp.read(ratingImagePath);
-        
-        // Vai redimensionar para os 65px definidos acima
-        ratingImage.resize(Jimp.AUTO, classificationHeight); 
+        ratingImage.resize(Jimp.AUTO, classificationHeight);
 
         const ratingX = padding;
         const ratingWidth = ratingImage.bitmap.width;
@@ -95,12 +82,12 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
     }
   }
 
-  // --- 3. LOGICA DE FLUXO DE TAGS ---
+  // --- 2. LOGICA DE FLUXO DE TAGS ---
   const generos = anime.genres ? anime.genres.slice(0, 6) : []; 
-
+  
   let currentTagX = tagsStartX_Line1; 
   let currentTagY = line1Y;
-  let onSecondLine = false; 
+  let onSecondLine = false; // Esta flag decide onde o estudio vai ficar
 
   for (const genero of generos) {
     const generoUpper = genero.toUpperCase();
@@ -116,14 +103,14 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
       }
       currentTagY = line2Y;
       currentTagX = padding;
-      onSecondLine = true;
+      onSecondLine = true; // Define a flag se pular de linha
 
       if (currentTagX + tagWidth > textAreaWidth + padding) {
         break; 
       }
     }
 
-    // --- Desenha a Tag ---
+    // ... (desenha a tag - sem mudança) ...
     const slices = await getTagSlices(moldName);
     if (slices) {
       const meioWidth = tagWidth - (cantoLargura * 2);
@@ -133,12 +120,26 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
       }
       image.composite(slices.right, currentTagX + cantoLargura + meioWidth, currentTagY);
     }
-    
     const textY = currentTagY + (tagHeight - Jimp.measureTextHeight(fontTagTV, genreText, tagWidth)) / 2;
     image.print(fontTagTV, currentTagX + tagPaddingHorizontal, textY, genreText);
-    
     currentTagX += tagWidth + spaceBetween;
   }
+  
+  // --- *** 3. DESENHA O ESTUDIO (NOVA LOGICA CONDICIONAL) *** ---
+  const estudio = anime.studios.nodes.length > 0 ? anime.studios.nodes[0].name : 'Estudio desconhecido';
+  const studioTextHeight = Jimp.measureTextHeight(fontEstudioTV, estudio, textAreaWidth);
+  let studioY;
+
+  if (onSecondLine) {
+    // Se a Linha 2 foi usada, posiciona o estudio acima dela (alto)
+    studioY = line2Y - studioTextHeight - spaceBetween;
+  } else {
+    // Se a Linha 2 esta vaga, posiciona o estudio acima da Linha 1 (baixo)
+    studioY = line1Y - studioTextHeight - spaceBetween;
+  }
+  
+  // Desenha o estudio na posicao Y calculada
+  image.print(fontEstudioTV, padding, studioY, estudio, textAreaWidth);
 }
 
 module.exports = { drawBottomBar };
