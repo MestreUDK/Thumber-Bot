@@ -39,10 +39,10 @@ Use o comando \`/capa [NOME_DO_ANIME]\`
 
 O que acontece depois:
 
-**1. 🔍 Fonte dos Dados:** O bot perguntará se você quer buscar os dados no "AniList" ou preencher "Manual".
-(Para animes não encontrados, use "Manual").
+**1. 🔍 Fonte dos Dados:** O bot perguntará se você quer buscar os dados no "🔗 AniList" ou preencher "Manual".
+(Para animes não encontrados, use "✍️ Manual").
 
-**2. 🎨 Layout:** Você precisará escolher um modelo de capa (TV, Filme ou ONA).
+**2. 🎨 Layout:** Você precisará escolher um modelo de capa (📺 TV, 🎬 Filme ou 📼 ONA).
 
 **3. ✏️ Edição:** Você poderá editar todas as informações usando os botões (título, estúdio, tags, classificação) e até trocar as imagens de pôster e fundo (enviando um link ou fazendo upload).
 
