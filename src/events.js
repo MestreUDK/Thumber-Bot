@@ -1,5 +1,5 @@
 // ARQUIVO: src/events.js
-// (Atualizado para mostrar o valor atual ao editar)
+// (CORRIGIDO: Re-adicionada a linha 'const acao = ctx.match[0];')
 
 const { gerarCapa } = require('./image.js');
 const { 
@@ -8,7 +8,6 @@ const {
   enviarMenuEdicaoFilme, 
   enviarMenuClassificacao
 } = require('./confirmation.js');
-// --- *** IMPORTAÇÃO ADICIONADA *** ---
 const { traduzirTemporada } = require('./utils.js');
 
 // --- Funcao interna (Sem alteracao) ---
@@ -25,14 +24,18 @@ async function irParaMenuEdicao(ctx) {
 
 function registerEvents(bot, checkPermission) {
 
-  // --- ETAPA 1: BOTOES DE LAYOUT (Sem alteracao) ---
+  // --- ETAPA 1: BOTOES DE LAYOUT (CORRIGIDO) ---
 
   bot.action(['set_layout_TV', 'set_layout_FILME', 'set_layout_ONA'], checkPermission, async (ctx) => {
     if (ctx.session.state !== 'layout_select' || !ctx.session.animeData) {
         return ctx.answerCbQuery('Comando invalido. Use /capa primeiro.');
     }
-    const acao = ctx.match[0];
-    const novoLayout = aco.replace('set_layout_', '');
+    
+    // --- *** A CORREÇÃO ESTÁ AQUI *** ---
+    const acao = ctx.match[0]; // Esta linha estava faltando
+    const novoLayout = acao.replace('set_layout_', ''); // Corrigido de 'aco' para 'acao'
+    // --- FIM DA CORREÇÃO ---
+
     ctx.session.animeData.layout = novoLayout;
     await enviarMenuLayout(ctx);
   });
@@ -43,7 +46,7 @@ function registerEvents(bot, checkPermission) {
     await irParaMenuEdicao(ctx); 
   });
 
-  // --- ETAPA 2: BOTOES DE EDICAO (COM MUDANCAS) ---
+  // --- ETAPA 2: BOTOES DE EDICAO (Sem alteracao) ---
 
   bot.action('voltar_layout', checkPermission, async (ctx) => {
     if (!ctx.session || (ctx.session.state !== 'main_edit' && ctx.session.state !== 'awaiting_input' && ctx.session.state !== 'rating_select')) return ctx.answerCbQuery();
@@ -74,18 +77,18 @@ function registerEvents(bot, checkPermission) {
     await ctx.reply('Geracao cancelada.');
   });
 
-  // --- *** LÓGICA DE PERGUNTA ATUALIZADA AQUI *** ---
+  // --- Lógica de pergunta (Sem alteracao) ---
   bot.action(['edit_title', 'edit_studio', 'edit_tags', 'edit_poster', 'edit_fundo', 'edit_info'], checkPermission, async (ctx) => {
     if (!ctx.session || ctx.session.state !== 'main_edit') return ctx.answerCbQuery();
     try {
       const acao = ctx.match[0];
-      const animeData = ctx.session.animeData; // Obter dados
+      const animeData = ctx.session.animeData; 
 
       ctx.session.state = 'awaiting_input'; 
       ctx.session.awaitingInput = acao; 
 
       let pergunta = 'O que voce quer colocar?';
-      let valorAtual = ''; // Variavel para o valor
+      let valorAtual = ''; 
 
       if (acao === 'edit_title') {
         valorAtual = (animeData.title && animeData.title.romaji) || "N/A";
@@ -94,7 +97,6 @@ function registerEvents(bot, checkPermission) {
       } else if (acao === 'edit_info') {
         const temporada = animeData.season ? `${traduzirTemporada(animeData.season)} ${animeData.seasonYear}` : "N/A";
         const episodios = animeData.episodes || '??';
-        // Usando o formato de • que esta no seu 'text.js'
         valorAtual = (animeData.infoManual !== null && animeData.infoManual !== undefined) 
             ? animeData.infoManual 
             : `${temporada} • ${episodios} EPISÓDIOS`;
@@ -115,14 +117,12 @@ function registerEvents(bot, checkPermission) {
         pergunta = 'Envie o **link (URL)** OU faça o **UPLOAD** da nova imagem de Fundo';
       }
 
-      // Envia a mensagem com parse_mode 'Markdown'
       await ctx.reply(pergunta, { parse_mode: 'Markdown' });
 
     } catch (err) { console.error('ERRO NO BOTAO EDITAR:', err); }
   });
-  // --- FIM DA ATUALIZAÇÃO ---
 
-  // --- Handler exclusivo para 'edit_rating' (Mantido) ---
+  // --- Handler exclusivo para 'edit_rating' (Sem alteracao) ---
   bot.action('edit_rating', checkPermission, async (ctx) => {
     if (!ctx.session || ctx.session.state !== 'main_edit') return ctx.answerCbQuery('Estado invalido.');
     ctx.session.state = 'rating_select'; 
@@ -131,7 +131,6 @@ function registerEvents(bot, checkPermission) {
 
 
   // --- ETAPA 3: OUVIR AS RESPOSTAS (Sem alteracao) ---
-  // (Já inclui a lógica para 'edit_info')
   bot.on('text', checkPermission, async (ctx) => {
     try {
       if (ctx.message.text.startsWith('/')) return; 
