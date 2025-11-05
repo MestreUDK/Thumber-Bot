@@ -1,5 +1,5 @@
 // ARQUIVO: src/confirmation.js
-// (Atualizado com o novo menu de classificacao E o botao "Editar Info".)
+// (Ajuste de layout nos botões do Menu Completo)
 
 const { Markup } = require('telegraf');
 const { traduzirTemporada } = require('./utils.js');
@@ -43,15 +43,15 @@ async function enviarMenuEdicaoCompleto(ctx) {
   const titulo = (animeData.title && animeData.title.romaji) || "N/A";
   const estudio = (animeData.studios && animeData.studios.nodes.length > 0) ? animeData.studios.nodes[0].name : 'N/A';
   
-  // --- *** NOVA LOGICA PARA INFO *** ---
+  // --- Logica da Info (Mantida) ---
   const temporada = animeData.season ? `${traduzirTemporada(animeData.season)} ${animeData.seasonYear}` : "N/A";
   const episodios = animeData.episodes || '??';
   const infoLinha = (animeData.infoManual !== null && animeData.infoManual !== undefined) 
       ? animeData.infoManual 
-      : `${temporada} - ${episodios} EPISÓDIOS`; // Mantem seu formato de info
+      : `${temporada} - ${episodios} EPISÓDIOS`; 
       
   const tags = (animeData.genres && animeData.genres.length > 0) ? animeData.genres.join(', ') : 'N/A';
-  const classificacao = animeData.classificacaoManual || 'Nenhuma'; // Mantem sua logica
+  const classificacao = animeData.classificacaoManual || 'Nenhuma';
   const layout = animeData.layout || 'TV'; 
 
   const texto = `
@@ -67,27 +67,32 @@ Classificação: ${classificacao}
 ` + "```" + `
 `;
 
-  // --- *** BOTOES ATUALIZADOS *** ---
+  // --- *** LAYOUT DOS BOTÕES ATUALIZADO *** ---
   const botoes = Markup.inlineKeyboard([
     [ Markup.button.callback('✅ Gerar Capa Agora!', 'generate_final') ],
     [ 
       Markup.button.callback('Editar Título', 'edit_title'),
-      Markup.button.callback('Editar Info', 'edit_info') // <-- BOTAO NOVO
+      Markup.button.callback('Editar Info', 'edit_info')
     ],
     [ 
       Markup.button.callback('Editar Estúdio', 'edit_studio'),
       Markup.button.callback('Editar Tags', 'edit_tags')
     ],
     [ 
-      Markup.button.callback('Editar Classificação', 'edit_rating'), // Este botao agora vai chamar o novo menu
-      Markup.button.callback('🖼️ Pôster', 'edit_poster'), // Encurtado
-      Markup.button.callback('🌆 Fundo', 'edit_fundo') // Encurtado
+      // Linha 4: Apenas Classificação (como solicitado)
+      Markup.button.callback('Editar Classificação', 'edit_rating')
+    ],
+    [ 
+      // Linha 5: Pôster e Fundo (como solicitado)
+      Markup.button.callback('🖼️ Pôster', 'edit_poster'),
+      Markup.button.callback('🌆 Fundo', 'edit_fundo')
     ],
     [ 
       Markup.button.callback('⬅️ Voltar (Layout)', 'voltar_layout'),
       Markup.button.callback('❌ Cancelar', 'cancel_edit') 
     ]
   ]);
+  // --- FIM DA MUDANÇA ---
 
   try {
     if (ctx.callbackQuery) {
@@ -123,7 +128,7 @@ Classificação: ${classificacao}
     [ Markup.button.callback('✅ Gerar Capa Agora!', 'generate_final') ],
     [ 
       Markup.button.callback('Editar Título', 'edit_title'),
-      Markup.button.callback('Editar Classificação', 'edit_rating') // Este botao agora vai chamar o novo menu
+      Markup.button.callback('Editar Classificação', 'edit_rating')
     ],
     [ 
       Markup.button.callback('🖼️ Editar Pôster', 'edit_poster')
@@ -143,8 +148,7 @@ Classificação: ${classificacao}
   await ctx.reply(texto, botoes);
 }
 
-// --- *** FUNCAO 4: NOVO MENU DE CLASSIFICACAO *** ---
-// (Sem alteracao, mantido como voce enviou)
+// --- FUNCAO 4: NOVO MENU DE CLASSIFICACAO (Sem alteracao) ---
 async function enviarMenuClassificacao(ctx) {
   const classificacaoAtual = ctx.session.animeData.classificacaoManual || 'Nenhuma';
 
@@ -187,5 +191,5 @@ module.exports = {
   enviarMenuLayout,
   enviarMenuEdicao: enviarMenuEdicaoCompleto,
   enviarMenuEdicaoFilme,
-  enviarMenuClassificacao // Exporta a nova funcao
+  enviarMenuClassificacao
 };
