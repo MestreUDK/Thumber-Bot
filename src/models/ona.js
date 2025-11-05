@@ -1,5 +1,5 @@
 // ARQUIVO: src/models/ona.js
-// (ATUALIZADO: Ordem de desenho invertida)
+// (VERIFICADO: Passando a altura total da capa (720) para o fundo)
 
 const { drawBackground } = require('../drawing/background.js');
 const { drawPoster } = require('../drawing/poster.js');
@@ -7,27 +7,24 @@ const { drawText } = require('../drawing/text.js');
 const { drawBottomBar } = require('../drawing/bottomBar.js');
 
 async function draw(image, anime, fonts, consts) {
-  const { largura, altura, padding } = consts;
+  const { largura, altura, padding } = consts; // 'altura' aqui será 720
 
   const animeONA = JSON.parse(JSON.stringify(anime));
   animeONA.season = 'ONA';
   animeONA.seasonYear = ''; 
 
-  // --- *** MUDANCA DE ORDEM *** ---
-  // 1. Desenha o Poster PRIMEIRO para saber a largura dele
+  // 1. Desenha o Poster
   const posterWidth = await drawPoster(image, animeONA.coverImage.large, largura, altura, padding);
   
-  // 2. Desenha o Fundo AGORA, passando o posterWidth
-  await drawBackground(image, animeONA.bannerImage, largura, altura, posterWidth);
-  // --- *** FIM DA MUDANCA *** ---
-
-  // 3. Calcula a area de texto (restante)
+  // 2. Desenha o Fundo, passando a 'altura' (720px) para ele
+  await drawBackground(image, animeONA.bannerImage, largura, altura, posterWidth); // <-- 'altura' é 720
+  
   const textoAreaLargura = largura - posterWidth - (padding * 2);
 
-  // 4. Textos (Info, Titulo) - Ficam no TOPO
+  // 4. Textos (Info, Titulo)
   await drawText(image, animeONA, fonts, padding, textoAreaLargura);
 
-  // 5. Barra Inferior (Estudio, 6 Tags, Classificacao)
+  // 5. Barra Inferior
   await drawBottomBar(image, animeONA, fonts, padding, textoAreaLargura, altura);
 }
 
