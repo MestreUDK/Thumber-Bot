@@ -40,6 +40,7 @@ Um bot robusto para Telegram focado em gerar capas (thumbnails) personalizadas p
     * Clique em "Gerar Capa Agora!" para receber a imagem final.
 
 ## 📁 Estrutura do Projeto
+
 /
 ├── assets/                # Arquivos estáticos
 │   ├── classificacao/     # Imagens (A14.png, A16.png, ...)
