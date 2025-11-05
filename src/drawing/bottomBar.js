@@ -1,5 +1,5 @@
 // ARQUIVO: src/drawing/bottomBar.js
-// (ATUALIZADO: Posição do Estúdio agora é condicional)
+// (ATUALIZADO: Adicionado espaço extra para o Estúdio quando a Linha 2 está vaga)
 
 const Jimp = require('jimp');
 const fs = require('fs');
@@ -57,8 +57,6 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
   const classificationY = line1Y - (classificationHeight / 2) + (tagHeight / 2);
   const line2Y = line1Y - tagHeight - spaceBetweenLines;
 
-  // --- *** MUDANÇA: O código do Estúdio foi MOVIDO DAQUI para o final ---
-
 
   // --- 1. DESENHA A CLASSIFICACAO (PRIORIDADE) ---
   let tagsStartX_Line1 = padding; 
@@ -84,10 +82,10 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
 
   // --- 2. LOGICA DE FLUXO DE TAGS ---
   const generos = anime.genres ? anime.genres.slice(0, 6) : []; 
-  
+
   let currentTagX = tagsStartX_Line1; 
   let currentTagY = line1Y;
-  let onSecondLine = false; // Esta flag decide onde o estudio vai ficar
+  let onSecondLine = false; 
 
   for (const genero of generos) {
     const generoUpper = genero.toUpperCase();
@@ -103,7 +101,7 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
       }
       currentTagY = line2Y;
       currentTagX = padding;
-      onSecondLine = true; // Define a flag se pular de linha
+      onSecondLine = true;
 
       if (currentTagX + tagWidth > textAreaWidth + padding) {
         break; 
@@ -130,15 +128,20 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
   const studioTextHeight = Jimp.measureTextHeight(fontEstudioTV, estudio, textAreaWidth);
   let studioY;
 
+  // --- *** MUDANÇA AQUI *** ---
+  // Define o espaço extra que você quer adicionar
+  const extraGap = 15; // Vamos adicionar 15px a mais de espaço (10 + 15 = 25px total)
+  // --- *** FIM DA MUDANÇA *** ---
+
   if (onSecondLine) {
     // Se a Linha 2 foi usada, posiciona o estudio acima dela (alto)
     studioY = line2Y - studioTextHeight - spaceBetween;
   } else {
     // Se a Linha 2 esta vaga, posiciona o estudio acima da Linha 1 (baixo)
-    studioY = line1Y - studioTextHeight - spaceBetween;
+    // E ADICIONA O ESPAÇO EXTRA
+    studioY = line1Y - studioTextHeight - spaceBetween - extraGap;
   }
   
-  // Desenha o estudio na posicao Y calculada
   image.print(fontEstudioTV, padding, studioY, estudio, textAreaWidth);
 }
 
