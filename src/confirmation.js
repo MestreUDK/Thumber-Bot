@@ -1,10 +1,10 @@
 // ARQUIVO: src/confirmation.js
-// (Ajuste de layout nos botões do Menu Completo)
+// (Adicionada a nova função 'enviarMenuFonteDados')
 
 const { Markup } = require('telegraf');
 const { traduzirTemporada } = require('./utils.js');
 
-// --- FUNCAO 1: Menu de Escolha de Layout (Sem alteracao) ---
+// --- FUNCAO 1: Menu de Escolha de Layout (ATUALIZADO) ---
 async function enviarMenuLayout(ctx) {
   const layout = ctx.session.animeData.layout || 'TV';
 
@@ -20,7 +20,9 @@ Modelo Atual: ` + "```" + `${layout}` + "```" + `
       Markup.button.callback('Filme', 'set_layout_FILME'),
       Markup.button.callback('ONA', 'set_layout_ONA')
     ],
-    [ Markup.button.callback('Próximo Passo (Editar Dados) ➡️', 'ir_para_edicao') ]
+    [ Markup.button.callback('Próximo Passo (Editar Dados) ➡️', 'ir_para_edicao') ],
+    // --- *** NOVO BOTAO VOLTAR ADICIONADO *** ---
+    [ Markup.button.callback('⬅️ Voltar (Fonte de Dados)', 'voltar_source_select') ] 
   ]);
 
   try {
@@ -33,7 +35,7 @@ Modelo Atual: ` + "```" + `${layout}` + "```" + `
 }
 
 
-// --- FUNCAO 2: Menu de Edicao COMPLETO (TV/ONA) (ATUALIZADO) ---
+// --- FUNCAO 2: Menu de Edicao COMPLETO (TV/ONA) (Sem alteração) ---
 async function enviarMenuEdicaoCompleto(ctx) {
   const animeData = ctx.session.animeData;
   if (!animeData) {
@@ -43,7 +45,6 @@ async function enviarMenuEdicaoCompleto(ctx) {
   const titulo = (animeData.title && animeData.title.romaji) || "N/A";
   const estudio = (animeData.studios && animeData.studios.nodes.length > 0) ? animeData.studios.nodes[0].name : 'N/A';
   
-  // --- Logica da Info (Mantida) ---
   const temporada = animeData.season ? `${traduzirTemporada(animeData.season)} ${animeData.seasonYear}` : "N/A";
   const episodios = animeData.episodes || '??';
   const infoLinha = (animeData.infoManual !== null && animeData.infoManual !== undefined) 
@@ -67,7 +68,6 @@ Classificação: ${classificacao}
 ` + "```" + `
 `;
 
-  // --- *** LAYOUT DOS BOTÕES ATUALIZADO *** ---
   const botoes = Markup.inlineKeyboard([
     [ Markup.button.callback('✅ Gerar Capa Agora!', 'generate_final') ],
     [ 
@@ -79,11 +79,9 @@ Classificação: ${classificacao}
       Markup.button.callback('Editar Tags', 'edit_tags')
     ],
     [ 
-      // Linha 4: Apenas Classificação (como solicitado)
       Markup.button.callback('Editar Classificação', 'edit_rating')
     ],
     [ 
-      // Linha 5: Pôster e Fundo (como solicitado)
       Markup.button.callback('🖼️ Pôster', 'edit_poster'),
       Markup.button.callback('🌆 Fundo', 'edit_fundo')
     ],
@@ -92,7 +90,6 @@ Classificação: ${classificacao}
       Markup.button.callback('❌ Cancelar', 'cancel_edit') 
     ]
   ]);
-  // --- FIM DA MUDANÇA ---
 
   try {
     if (ctx.callbackQuery) {
@@ -148,7 +145,7 @@ Classificação: ${classificacao}
   await ctx.reply(texto, botoes);
 }
 
-// --- FUNCAO 4: NOVO MENU DE CLASSIFICACAO (Sem alteracao) ---
+// --- FUNCAO 4: MENU DE CLASSIFICACAO (Sem alteracao) ---
 async function enviarMenuClassificacao(ctx) {
   const classificacaoAtual = ctx.session.animeData.classificacaoManual || 'Nenhuma';
 
@@ -186,10 +183,40 @@ Atual: ` + "```" + `${classificacaoAtual}` + "```" + `
   await ctx.reply(texto, botoes);
 }
 
+// --- *** FUNCAO 5: NOVO MENU DE FONTE DE DADOS *** ---
+async function enviarMenuFonteDados(ctx) {
+  const nomeDoAnime = ctx.session.searchTitle || "Anime Desconhecido";
+
+  const texto = `
+Como você quer obter os dados para:
+` + "```" + `${nomeDoAnime}` + "```" + `
+`;
+
+  // Botei uns emojis para ficar mais claro
+  const botoes = Markup.inlineKeyboard([
+    [
+      Markup.button.callback('Buscar no AniList 🤖', 'source_anilist'),
+      Markup.button.callback('Preencher Manualmente ✏️', 'source_manual')
+    ],
+    [
+      Markup.button.callback('❌ Cancelar Busca', 'cancel_edit') // Reutiliza o 'cancel_edit'
+    ]
+  ]);
+
+  try {
+    if (ctx.callbackQuery) {
+      await ctx.deleteMessage();
+    }
+  } catch (e) { /* ignora */ }
+
+  await ctx.reply(texto, botoes);
+}
+
 
 module.exports = { 
   enviarMenuLayout,
   enviarMenuEdicao: enviarMenuEdicaoCompleto,
   enviarMenuEdicaoFilme,
-  enviarMenuClassificacao
+  enviarMenuClassificacao,
+  enviarMenuFonteDados // <-- Exporta a nova funcao
 };
