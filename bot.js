@@ -3,12 +3,31 @@
 require('dotenv').config();
 const { Telegraf } = require('telegraf'); 
 const LocalSession = require('telegraf-session-local');
+// --- *** MÓDULOS ADICIONADOS *** ---
+const fs = require('fs');
+const path = require('path');
+
+// --- *** NOVO: Carrega a versão do package.json *** ---
+let botVersion = 'v?'; // Versão fallback caso a leitura falhe
+try {
+  // Cria o caminho para o package.json na raiz
+  const packageJsonPath = path.join(__dirname, 'package.json');
+  // Lê o arquivo
+  const packageJsonData = fs.readFileSync(packageJsonPath, 'utf8');
+  // Converte o texto para objeto JSON
+  const packageData = JSON.parse(packageJsonData);
+  // Pega a versão e formata
+  if (packageData.version) {
+    botVersion = `v${packageData.version}`;
+  }
+} catch (err) {
+  console.error("Nao foi possivel ler o package.json para pegar a versao:", err.message);
+}
+// --- FIM DA ADIÇÃO ---
 
 // Importa nossas funcoes da pasta 'src'
 const { buscarAnime } = require('./src/anilist.js');
 const { carregarFontes } = require('./src/image.js'); 
-// --- *** IMPORTAÇÃO ATUALIZADA *** ---
-// Agora importa a nova funcao 'enviarMenuFonteDados'
 const { enviarMenuLayout, enviarMenuFonteDados } = require('./src/confirmation.js'); 
 const { registerEvents } = require('./src/events.js');
 const { checkPermission, allowedIds } = require('./src/security.js');
@@ -30,6 +49,7 @@ bot.start((ctx) => {
   ctx.reply(welcomeMessage);
 });
 
+// --- *** COMANDO /ajuda ATUALIZADO COM RODAPÉ *** ---
 bot.command('ajuda', (ctx) => {
   const helpMessage = `
 Olá! Aqui está como usar o Thumber Bot:
@@ -39,7 +59,7 @@ Use o comando \`/capa [NOME_DO_ANIME]\`
 
 O que acontece depois:
 
-**1. 🔍 Fonte dos Dados:** O bot perguntará se você quer buscar os dados no "🔗 AniList" ou preencher "Manual".
+**1. 🔍 Fonte dos Dados:** O bot perguntará se você quer buscar os dados no "🔗 AniList" ou preencher "✍️ Manual".
 (Para animes não encontrados, use "✍️ Manual").
 
 **2. 🎨 Layout:** Você precisará escolher um modelo de capa (📺 TV, 🎬 Filme ou 📼 ONA).
@@ -47,13 +67,17 @@ O que acontece depois:
 **3. ✏️ Edição:** Você poderá editar todas as informações usando os botões (título, estúdio, tags, classificação) e até trocar as imagens de pôster e fundo (enviando um link ou fazendo upload).
 
 **4. ✅ Gerar:** Quando tudo estiver perfeito, clique em "Gerar Capa" e o bot a enviará para você em segundos!
-`;
-  
+
+---
+*Thumber Bot ${botVersion}*
+`; // <-- RODAPÉ ADICIONADO AQUI
+
   ctx.reply(helpMessage, { parse_mode: 'Markdown' });
 });
+// --- FIM DA ATUALIZAÇÃO ---
 
 
-// --- *** COMANDO /CAPA TOTALMENTE REFEITO *** ---
+// --- COMANDO /capa (Sem alteração) ---
 bot.command('capa', checkPermission, async (ctx) => {
   try {
     const nomeDoAnime = ctx.message.text.replace('/capa', '').trim();
@@ -61,14 +85,9 @@ bot.command('capa', checkPermission, async (ctx) => {
       return ctx.reply('Por favor, me diga o nome do anime. Ex: /capa To Your Eternity');
     }
 
-    // --- NOVA LÓGICA ---
-    // 1. Apenas salva o nome da busca na sessão
     ctx.session.searchTitle = nomeDoAnime; 
-    // 2. Define o novo estado de "seleção de fonte"
     ctx.session.state = 'source_select'; 
-    // 3. Chama o NOVO menu de seleção (ANILIST / MANUAL)
     await enviarMenuFonteDados(ctx); 
-    // --- FIM DA NOVA LÓGICA ---
 
   } catch (err) {
     console.error('ERRO CRITICO NO COMANDO /CAPA:', err);
@@ -83,7 +102,8 @@ registerEvents(bot, checkPermission);
 // --- INICIA O BOT ---
 carregarFontes().then(() => {
   bot.launch();
-  console.log('Bot REATORADO iniciado e rodando (com Fluxo de Etapas)...');
+  // Loga a versão no console também
+  console.log(`Bot REATORADO iniciado e rodando (Versão ${botVersion})...`);
 }).catch(err => {
   console.error('Falha ao carregar fontes no inicio!', err);
   process.exit(1);
