@@ -1,5 +1,5 @@
 // ARQUIVO: src/drawing/text.js
-// (ATUALIZADO: Textos alinhados a direita)
+// (ATUALIZADO: Lógica 'infoManual' + Textos alinhados a direita)
 
 const Jimp = require('jimp');
 const { traduzirTemporada } = require('../utils.js'); 
@@ -9,13 +9,18 @@ async function drawText(image, anime, fonts, padding, textAreaWidth) {
   const { fontTituloTV, fontInfoTV } = fonts;
   let currentTextY = padding;
 
+  // --- *** LOGICA ATUALIZADA *** ---
+  // Se 'infoManual' foi definido pelo usuario, use-o.
+  // Senao, use o padrao da API com seu formato de '•'.
   const temporada = traduzirTemporada(anime.season);
   const episodios = anime.episodes || '??';
-  const infoTopo = `${temporada} ${anime.seasonYear} • ${episodios} EPISÓDIOS`;
+  const infoTopo = (anime.infoManual !== null && anime.infoManual !== undefined)
+      ? anime.infoManual
+      : `${temporada} ${anime.seasonYear} • ${episodios} EPISÓDIOS`;
+  // --- FIM DA LOGICA ATUALIZADA ---
 
-  // --- *** MUDANÇA AQUI (INFO) *** ---
-  // Trocamos a chamada simples por uma chamada com objeto de opções
-  // para definir o 'alignmentX' como 'RIGHT' (Direita).
+  // --- MUDANÇA MANTIDA (INFO) ---
+  // (Usa a variavel 'infoTopo' atualizada)
   image.print(
     fontInfoTV,
     padding, // O X onde a area de texto comeca
@@ -31,8 +36,7 @@ async function drawText(image, anime, fonts, padding, textAreaWidth) {
 
   const titulo = anime.title.romaji || anime.title.english || "Titulo Desconhecido";
 
-  // --- *** MUDANÇA AQUI (TITULO) *** ---
-  // Fazemos a mesma coisa para o Titulo.
+  // --- MUDANÇA MANTIDA (TITULO) ---
   image.print(
     fontTituloTV,
     padding, // O X onde a area de texto comeca
