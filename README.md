@@ -41,25 +41,28 @@ Um bot robusto para Telegram focado em gerar capas (thumbnails) personalizadas p
 
 ## 📁 Estrutura do Projeto
 
-/
-├── assets/                # Arquivos estáticos
-│   ├── classificacao/     # Imagens (A14.png, A16.png, ...)
-│   ├── fonts/             # Fontes .fnt
-│   └── tags/              # Moldes das tags (tag_azul.png, ...)
-├── src/                   # Código fonte principal
-│   ├── drawing/           # Módulos de desenho (background.js, poster.js, text.js, bottomBar.js)
-│   ├── models/            # Modelos de layout (tv.js, ona.js, filme.js)
-│   ├── anilist.js         # Lógica de busca na API AniList
-│   ├── confirmation.js    # Funções que enviam os menus de botões
-│   ├── events.js          # Onde todos os 'bot.action' e 'bot.on' são registrados
-│   ├── image.js           # Orquestrador principal do Jimp (chama os modelos)
-│   ├── security.js        # Middleware 'checkPermission'
-│   └── utils.js           # Funções auxiliares (traduzirTemporada, getRatingImageName)
-├── .env.example           # Arquivo de exemplo para variáveis de ambiente
-├── bot.js                 # Arquivo principal (Inicializa o Telegraf)
-├── package.json           # Dependências do Node.js
-├── query.graphql          # Query da API AniList
-└── tag_config.json        # Mapeamento de gêneros para cores de tags
+* `/` (Raiz do projeto)
+    * **assets/**: Arquivos estáticos
+        * `classificacao/`: Imagens (A14.png, A16.png, ...)
+        * `fonts/`: Fontes .fnt
+        * `tags/`: Moldes das tags (tag_azul.png, ...)
+    * **src/**: Código fonte principal
+        * `drawing/`: Módulos de desenho (background.js, poster.js, text.js, bottomBar.js)
+        * `models/`: Modelos de layout (tv.js, ona.js, filme.js)
+        * `anilist.js`: Lógica de busca na API AniList
+        * `confirmation.js`: Funções que enviam os menus de botões
+        * `events.js`: Onde todos os 'bot.action' e 'bot.on' são registrados
+        * `image.js`: Orquestrador principal do Jimp (chama os modelos)
+        * `security.js`: Middleware 'checkPermission'
+        * `utils.js`: Funções auxiliares (traduzirTemporada, getRatingImageName)
+    * `.env.example`: Arquivo de exemplo para variáveis de ambiente
+    * `bot.js`: Arquivo principal (Inicializa o Telegraf)
+    * `package.json`: Dependências do Node.js
+    * `query.graphql`: Query da API AniList
+    * `tag_config.json`: Mapeamento de gêneros para cores de tags
+
+
+
 
 ## 🛠️ Instalação e Setup
 
