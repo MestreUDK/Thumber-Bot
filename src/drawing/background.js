@@ -1,28 +1,28 @@
 // ARQUIVO: src/drawing/background.js
-// (ATUALIZADO: Altura do fundo ajustada para 720px)
+// (CORRIGIDO: Utiliza a altura total da capa (720px) para o fundo, ajustando-se a largura restante)
 
 const Jimp = require('jimp');
 
+// A função recebe 'height' que é a altura TOTAL da imagem final (720px)
 async function drawBackground(image, bannerUrl, width, height, posterWidth) {
   
+  // Calcula a largura exata do "pedaço restante" à esquerda do pôster
   const backgroundWidth = width - posterWidth;
-  
-  // --- *** MUDANCA AQUI *** ---
-  const desiredBackgroundHeight = 720; // Altura desejada para o fundo
-  // --- *** FIM DA MUDANCA *** ---
 
   if (bannerUrl) {
     const banner = await Jimp.read(bannerUrl);
     
-    // ATUALIZADO: Aplica .cover() na altura desejada
-    banner.cover(backgroundWidth, desiredBackgroundHeight);
+    // Agora, banner.cover() usará backgroundWidth e o 'height' total da capa (720px)
+    // Isso fará com que o fundo preencha o espaço lateral restante,
+    // esticando/encolhendo para caber na largura e altura totais.
+    banner.cover(backgroundWidth, height);
     
-    // ATUALIZADO: Compõe o banner a partir do topo (0,0) na altura desejada
+    // Compõe a imagem do banner na posição (0,0)
     image.composite(banner, 0, 0); 
   }
 
-  // ATUALIZADO: O overlay tambem so cobre a area restante e a altura desejada
-  const overlay = new Jimp(backgroundWidth, desiredBackgroundHeight, '#000000');
+  // O overlay também cobre a área restante (backgroundWidth x height)
+  const overlay = new Jimp(backgroundWidth, height, '#000000');
   overlay.opacity(0.6);
   image.composite(overlay, 0, 0); 
 }
