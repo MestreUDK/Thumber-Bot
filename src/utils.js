@@ -1,5 +1,5 @@
 // ARQUIVO: src/utils.js
-// (Versao completa com as duas funcoes)
+// (ATUALIZADO: Funções de Passcode adicionadas)
 
 // --- FUNCAO PARA TRADUZIR (SEM ACENTOS) ---
 function traduzirTemporada(season) {
@@ -13,8 +13,7 @@ function traduzirTemporada(season) {
   }
 }
 
-// --- FUNCAO DE MAPEAMENTO DE CLASSIFICACAO (A QUE ESTA FALTANDO) ---
-// (Usa as regras que voce me passou)
+// --- FUNCAO DE MAPEAMENTO DE CLASSIFICACAO ---
 function getRatingImageName(apiRating) {
   if (!apiRating) return null;
   const rating = String(apiRating).toUpperCase();
@@ -33,8 +32,35 @@ function getRatingImageName(apiRating) {
   return null;
 }
 
-// Exporta as duas funcoes
+// --- *** NOVO: FUNÇÕES DE PASSCODE *** ---
+
+// Transforma o objeto animeData em uma string Base64
+function gerarPasscode(animeData) {
+  try {
+    const jsonStr = JSON.stringify(animeData);
+    // Cria um Buffer e converte para base64
+    return Buffer.from(jsonStr).toString('base64');
+  } catch (e) {
+    console.error('Erro ao gerar passcode:', e);
+    return null;
+  }
+}
+
+// Transforma a string Base64 de volta em objeto
+function lerPasscode(passcodeString) {
+  try {
+    // Converte de base64 para texto
+    const jsonStr = Buffer.from(passcodeString, 'base64').toString('utf-8');
+    return JSON.parse(jsonStr);
+  } catch (e) {
+    return null; // Retorna null se o código for inválido
+  }
+}
+
+// Exporta as funcoes
 module.exports = {
   traduzirTemporada,
-  getRatingImageName
+  getRatingImageName,
+  gerarPasscode, // <-- Exportado
+  lerPasscode    // <-- Exportado
 };
