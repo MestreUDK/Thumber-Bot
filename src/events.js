@@ -1,5 +1,5 @@
 // ARQUIVO: src/events.js
-// (ATUALIZADO: Logica completa do Passcode)
+// (ATUALIZADO: Importa passcode.js em vez de utils.js)
 
 const { gerarCapa } = require('./image.js');
 const { 
@@ -9,9 +9,12 @@ const {
   enviarMenuClassificacao,
   enviarMenuFonteDados 
 } = require('./confirmation.js');
-// --- *** IMPORTA NOVAS FUNCOES *** ---
-const { traduzirTemporada, gerarPasscode, lerPasscode } = require('./utils.js');
+const { traduzirTemporada } = require('./utils.js');
 const { buscarAnime } = require('./anilist.js'); 
+
+// --- *** MUDANÇA AQUI: Importa do novo arquivo *** ---
+const { gerarPasscode, lerPasscode } = require('./passcode.js'); 
+// ----------------------------------------------------
 
 async function irParaMenuEdicao(ctx) {
   const layout = ctx.session.animeData.layout || 'TV';
@@ -26,7 +29,7 @@ async function irParaMenuEdicao(ctx) {
 
 function registerEvents(bot, checkPermission) {
 
-  // --- ETAPA 0: HANDLERS DE FONTE DE DADOS ---
+  // --- ETAPA 0: FONTE DE DADOS ---
   
   bot.action('source_anilist', checkPermission, async (ctx) => {
     try {
@@ -97,18 +100,14 @@ function registerEvents(bot, checkPermission) {
     } catch (err) { console.error('ERRO EM source_manual:', err); }
   });
 
-  // --- *** NOVO HANDLER: PEDIR PASSCODE *** ---
   bot.action('source_passcode', checkPermission, async (ctx) => {
     if (!ctx.session || ctx.session.state !== 'source_select') return ctx.answerCbQuery();
-    
-    // Define um estado especial esperando o codigo
     ctx.session.state = 'awaiting_passcode';
-    
     await ctx.deleteMessage();
     await ctx.reply('🔐 Por favor, cole o seu **Passcode** aqui:', { parse_mode: 'Markdown' });
   });
 
-  // --- ETAPA 1: BOTOES DE LAYOUT ---
+  // --- ETAPA 1: LAYOUT ---
 
   bot.action(['set_layout_TV', 'set_layout_FILME', 'set_layout_ONA'], checkPermission, async (ctx) => {
     if (ctx.session.state !== 'layout_select' || !ctx.session.animeData) {
@@ -128,13 +127,12 @@ function registerEvents(bot, checkPermission) {
 
   bot.action('voltar_source_select', checkPermission, async (ctx) => {
     if (!ctx.session || ctx.session.state !== 'layout_select') return ctx.answerCbQuery();
-    
     ctx.session.state = 'source_select'; 
     ctx.session.animeData = null; 
     await enviarMenuFonteDados(ctx); 
   });
 
-  // --- ETAPA 2: BOTOES DE EDICAO ---
+  // --- ETAPA 2: EDICAO ---
 
   bot.action('voltar_layout', checkPermission, async (ctx) => {
     if (!ctx.session || (ctx.session.state !== 'main_edit' && ctx.session.state !== 'awaiting_input' && ctx.session.state !== 'rating_select')) return ctx.answerCbQuery();
@@ -143,7 +141,6 @@ function registerEvents(bot, checkPermission) {
     await enviarMenuLayout(ctx);
   });
 
-  // --- *** GERAÇÃO ATUALIZADA COM PASSCODE *** ---
   bot.action('generate_final', checkPermission, async (ctx) => {
     if (!ctx.session || ctx.session.state !== 'main_edit') return ctx.answerCbQuery();
     try {
@@ -157,20 +154,17 @@ function registerEvents(bot, checkPermission) {
         return ctx.reply(`Erro ao gerar imagem: ${resultadoImagem.error}`);
       }
       
-      // Envia a imagem
       await ctx.replyWithPhoto({ source: resultadoImagem.buffer });
 
-      // --- NOVO: GERA E ENVIA O PASSCODE ---
+      // --- GERA PASSCODE (AGORA OTIMIZADO) ---
       const passcode = gerarPasscode(animeData);
       if (passcode) {
-         // Mensagem formatada para facilitar a copia
          await ctx.reply(
            `🔐 **Passcode da Capa**\n\nGuarde este código para editar esta capa novamente no futuro:\n\n` +
            "```" + passcode + "```", 
            { parse_mode: 'Markdown' }
          );
       }
-      // --------------------------------------
 
       ctx.session = null;
     } catch (err) { console.error('ERRO NO BOTAO GERAR:', err); }
@@ -228,12 +222,12 @@ function registerEvents(bot, checkPermission) {
   });
 
 
-  // --- ETAPA 3: OUVIR AS RESPOSTAS (TEXTO) ---
+  // --- ETAPA 3: OUVIR RESPOSTAS ---
   bot.on('text', checkPermission, async (ctx) => {
     try {
       if (ctx.message.text.startsWith('/')) return; 
       
-      // --- *** NOVO: CHECK DE PASSCODE *** ---
+      // --- CHECK DE PASSCODE (AGORA LÊ O FORMATO NOVO) ---
       if (ctx.session.state === 'awaiting_passcode') {
           const codigo = ctx.message.text.trim();
           const dadosRestaurados = lerPasscode(codigo);
@@ -242,12 +236,10 @@ function registerEvents(bot, checkPermission) {
               return ctx.reply('❌ Código inválido ou corrompido. Tente novamente ou use /capa para reiniciar.');
           }
 
-          // Restaura a sessão
           ctx.session.animeData = dadosRestaurados;
-          ctx.session.state = 'main_edit'; // Pula direto para a edição
+          ctx.session.state = 'main_edit'; 
           
           await ctx.reply('✅ Passcode aceito! Dados restaurados com sucesso.');
-          // Vai direto para o menu de edição (pula layout)
           return await irParaMenuEdicao(ctx); 
       }
       // ---------------------------------------
@@ -278,7 +270,6 @@ function registerEvents(bot, checkPermission) {
     } catch (err) { console.error('ERRO AO PROCESSAR TEXTO:', err); }
   });
 
-  // --- (Sem alteracao no handler de fotos) ---
   bot.on('photo', checkPermission, async (ctx) => {
     try {
       if (ctx.session.state !== 'awaiting_input' || !ctx.session.animeData) { return; }
@@ -308,7 +299,7 @@ function registerEvents(bot, checkPermission) {
     } catch (err) { console.error('ERRO AO PROCESSAR FOTO:', err); }
   });
 
-  // --- ETAPA 4: HANDLERS DE CLASSIFICACAO (Sem alteracao) ---
+  // --- ETAPA 4: CLASSIFICACAO ---
   bot.action(
     [
       'set_rating_L', 'set_rating_10', 'set_rating_12', 
