@@ -1,12 +1,12 @@
 // ARQUIVO: src/drawing/bottomBar.js
-// (ATUALIZADO: Adicionado espaço extra para o Estúdio quando a Linha 2 está vaga)
+// (ATUALIZADO: Busca inteligente de tags em Inglês E Português)
 
 const Jimp = require('jimp');
 const fs = require('fs');
 const path = require('path');
 const { getRatingImageName } = require('../utils.js');
 
-// --- 1. Carrega o Dicionario de Tags (Sem mudancas) ---
+// --- 1. Carrega o Dicionario de Tags ---
 let tagConfig;
 try {
   const configPath = path.join(__dirname, '..', '..', 'tag_config.json');
@@ -16,9 +16,9 @@ try {
   tagConfig = { "DEFAULT": { "text": null, "color": "tag_cinza_claro.png" } };
 }
 
-// --- 2. Cache de Moldes de Tag (Sem mudancas) ---
+// --- 2. Cache de Moldes de Tag ---
 const tagMolds = {};
-const cantoLargura = 22; 
+const cantoLargura = 22;
 const meioLargura = 16; 
 
 async function getTagSlices(moldName) {
@@ -41,7 +41,32 @@ async function getTagSlices(moldName) {
   }
 }
 
-// --- 4. Funcao Principal de Desenhar a Barra (LOGICA ATUALIZADA) ---
+// --- *** NOVA FUNÇÃO: BUSCA INTELIGENTE *** ---
+function findTagConfig(tagName) {
+  if (!tagName) return tagConfig["DEFAULT"];
+  
+  const upperName = tagName.toUpperCase().trim();
+
+  // 1. Tenta encontrar direto pela chave em Inglês (Ex: "ACTION")
+  // (Comportamento original da API)
+  if (tagConfig[upperName]) {
+    return tagConfig[upperName];
+  }
+
+  // 2. Se não achou, procura pelo campo "text" em Português (Ex: "AÇÃO")
+  // (Comportamento para o Modo Manual)
+  const found = Object.values(tagConfig).find(conf => 
+    conf.text && conf.text.toUpperCase() === upperName
+  );
+
+  if (found) return found;
+
+  // 3. Se não achar nada, retorna o padrão
+  return tagConfig["DEFAULT"];
+}
+// -----------------------------------------------
+
+// --- 4. Funcao Principal de Desenhar a Barra ---
 async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura) { 
   const { fontEstudioTV, fontTagTV } = fonts;
 
@@ -49,18 +74,16 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
   const tagHeight = 45; 
   const spaceBetween = 10; 
   const spaceBetweenLines = 15; 
-  const tagPaddingHorizontal = 15; 
+  const tagPaddingHorizontal = 15;
 
   // --- POSICOES Y ---
   const line1Y = (altura - padding - classificationHeight + (classificationHeight / 2) - (tagHeight / 2))
-                 - tagHeight - spaceBetweenLines; 
+                 - tagHeight - spaceBetweenLines;
   const classificationY = line1Y - (classificationHeight / 2) + (tagHeight / 2);
   const line2Y = line1Y - tagHeight - spaceBetweenLines;
 
-
-  // --- 1. DESENHA A CLASSIFICACAO (PRIORIDADE) ---
-  let tagsStartX_Line1 = padding; 
-
+  // --- 1. DESENHA A CLASSIFICACAO ---
+  let tagsStartX_Line1 = padding;
   if (anime.classificacaoManual) { 
     const ratingFileName = getRatingImageName(anime.classificacaoManual);
     if (ratingFileName) {
@@ -80,18 +103,24 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
     }
   }
 
-  // --- 2. LOGICA DE FLUXO DE TAGS ---
+  // --- 2. LOGICA DE FLUXO DE TAGS (ATUALIZADA) ---
   const generos = anime.genres ? anime.genres.slice(0, 6) : []; 
 
   let currentTagX = tagsStartX_Line1; 
   let currentTagY = line1Y;
-  let onSecondLine = false; 
+  let onSecondLine = false;
 
   for (const genero of generos) {
-    const generoUpper = genero.toUpperCase();
-    const config = tagConfig[generoUpper] || tagConfig["DEFAULT"];
-    const genreText = (config.text || generoUpper).toUpperCase(); 
+    // --- *** MUDANÇA: Usa a nova função de busca *** ---
+    const config = findTagConfig(genero);
+    
+    // Define o texto: Se a config tiver tradução, usa ela. Se não, usa o original.
+    // Isso garante que se você digitar "Action", ele desenha "AÇÃO".
+    // E se você digitar "Ação", ele desenha "AÇÃO".
+    const genreText = (config.text || genero).toUpperCase(); 
     const moldName = config.color;
+    // ----------------------------------------------------
+
     const textWidth = Jimp.measureText(fontTagTV, genreText);
     const tagWidth = textWidth + (tagPaddingHorizontal * 2);
 
@@ -102,13 +131,11 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
       currentTagY = line2Y;
       currentTagX = padding;
       onSecondLine = true;
-
       if (currentTagX + tagWidth > textAreaWidth + padding) {
         break; 
       }
     }
 
-    // ... (desenha a tag - sem mudança) ...
     const slices = await getTagSlices(moldName);
     if (slices) {
       const meioWidth = tagWidth - (cantoLargura * 2);
@@ -118,27 +145,22 @@ async function drawBottomBar(image, anime, fonts, padding, textAreaWidth, altura
       }
       image.composite(slices.right, currentTagX + cantoLargura + meioWidth, currentTagY);
     }
+
     const textY = currentTagY + (tagHeight - Jimp.measureTextHeight(fontTagTV, genreText, tagWidth)) / 2;
     image.print(fontTagTV, currentTagX + tagPaddingHorizontal, textY, genreText);
     currentTagX += tagWidth + spaceBetween;
   }
   
-  // --- *** 3. DESENHA O ESTUDIO (NOVA LOGICA CONDICIONAL) *** ---
+  // --- 3. DESENHA O ESTUDIO ---
   const estudio = anime.studios.nodes.length > 0 ? anime.studios.nodes[0].name : 'Estudio desconhecido';
   const studioTextHeight = Jimp.measureTextHeight(fontEstudioTV, estudio, textAreaWidth);
   let studioY;
-
-  // --- *** MUDANÇA AQUI *** ---
-  // Define o espaço extra que você quer adicionar
-  const extraGap = 15; // Vamos adicionar 15px a mais de espaço (10 + 15 = 25px total)
-  // --- *** FIM DA MUDANÇA *** ---
+  
+  const extraGap = 15;
 
   if (onSecondLine) {
-    // Se a Linha 2 foi usada, posiciona o estudio acima dela (alto)
     studioY = line2Y - studioTextHeight - spaceBetween;
   } else {
-    // Se a Linha 2 esta vaga, posiciona o estudio acima da Linha 1 (baixo)
-    // E ADICIONA O ESPAÇO EXTRA
     studioY = line1Y - studioTextHeight - spaceBetween - extraGap;
   }
   
