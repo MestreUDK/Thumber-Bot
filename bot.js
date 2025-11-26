@@ -43,32 +43,34 @@ bot.start((ctx) => {
   ctx.reply(welcomeMessage);
 });
 
-// --- COMANDO /ajuda ATUALIZADO (Inclui Passcode e Manual) ---
+// --- COMANDO /ajuda (Versão HTML - À Prova de Erros) ---
 bot.command('ajuda', (ctx) => {
   const helpMessage = `
 Olá! Aqui está como usar o Thumber Bot:
 
-Use o comando \`/capa [NOME_DO_ANIME]\`
-*Exemplo: /capa To Your Eternity*
+Use o comando:
+<code>/capa Nome do Anime</code>
+<i>Exemplo: /capa To Your Eternity</i>
 
 O que acontece depois:
 
-**1. 🔍 Fonte dos Dados:** Escolha como iniciar:
-* **🔗 AniList:** Busca dados automáticos.
-* **✍️ Manual:** Cria do zero (para obras sem registro).
-* **🔐 Passcode:** Cola um código para restaurar uma capa antiga.
+<b>1. 🔍 Fonte dos Dados:</b> Escolha como iniciar:
+• <b>🔗 AniList:</b> Busca dados automáticos.
+• <b>✍️ Manual:</b> Cria do zero (para obras sem registro).
+• <b>🔐 Passcode:</b> Cola um código para restaurar uma capa antiga.
 
-**2. 🎨 Layout:** Escolha o modelo (📺 TV, 🎬 Filme ou 📼 ONA).
+<b>2. 🎨 Layout:</b> Escolha o modelo (📺 TV, 🎬 Filme ou 📼 ONA).
 
-**3. ✏️ Edição:** Edite todas as informações (título, estúdio, tags, classificação) e troque imagens (pôster/fundo) enviando links ou arquivos.
+<b>3. ✏️ Edição:</b> Edite todas as informações (título, estúdio, tags, classificação) e troque imagens (pôster/fundo) enviando links ou arquivos.
 
-**4. ✅ Gerar:** Clique em "Gerar Capa" para receber a imagem final e o seu **Passcode** de segurança (para edições futuras)!
+<b>4. ✅ Gerar:</b> Clique em "Gerar Capa" para receber a imagem final e o seu <b>Passcode</b> de segurança (para edições futuras)!
 
 ---
-*Thumber Bot ${botVersion}*
+<i>Thumber Bot ${botVersion}</i>
 `; 
 
-  ctx.reply(helpMessage, { parse_mode: 'Markdown' });
+  // Usamos parse_mode: 'HTML' para evitar erros de Markdown
+  ctx.reply(helpMessage, { parse_mode: 'HTML' });
 });
 
 
