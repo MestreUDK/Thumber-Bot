@@ -1,5 +1,5 @@
 // ARQUIVO: src/confirmation.js
-// (Botões 'Anilist' e 'Manual' com texto simplificado)
+// (ATUALIZADO: Botão Passcode adicionado)
 
 const { Markup } = require('telegraf');
 const { traduzirTemporada } = require('./utils.js');
@@ -182,7 +182,7 @@ Atual: ` + "```" + `${classificacaoAtual}` + "```" + `
   await ctx.reply(texto, botoes);
 }
 
-// --- FUNCAO 5: NOVO MENU DE FONTE DE DADOS (ATUALIZADO) ---
+// --- FUNCAO 5: MENU DE FONTE DE DADOS (ATUALIZADO) ---
 async function enviarMenuFonteDados(ctx) {
   const nomeDoAnime = ctx.session.searchTitle || "Anime Desconhecido";
 
@@ -191,11 +191,14 @@ Como você quer obter os dados para:
 ` + "```" + `${nomeDoAnime}` + "```" + `
 `;
 
-  // --- *** MUDANÇA NOS TEXTOS DOS BOTÕES *** ---
+  // --- *** MUDANÇA: Botão Passcode Adicionado *** ---
   const botoes = Markup.inlineKeyboard([
     [
-      Markup.button.callback('🔗 Anilist', 'source_anilist'), // <-- TEXTO MUDADO
-      Markup.button.callback('✍️ Manual', 'source_manual')    // <-- TEXTO MUDADO
+      Markup.button.callback('🔗 Anilist', 'source_anilist'),
+      Markup.button.callback('✍️ Manual', 'source_manual')
+    ],
+    [
+      Markup.button.callback('🔐 Passcode (Restaurar Capa)', 'source_passcode') // <-- NOVO
     ],
     [
       Markup.button.callback('❌ Cancelar Busca', 'cancel_edit')
