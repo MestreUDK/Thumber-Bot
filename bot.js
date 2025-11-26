@@ -3,27 +3,21 @@
 require('dotenv').config();
 const { Telegraf } = require('telegraf'); 
 const LocalSession = require('telegraf-session-local');
-// --- *** MÓDULOS ADICIONADOS *** ---
 const fs = require('fs');
 const path = require('path');
 
-// --- *** NOVO: Carrega a versão do package.json *** ---
-let botVersion = 'v?'; // Versão fallback caso a leitura falhe
+// --- Carrega a versão do package.json ---
+let botVersion = 'v?'; 
 try {
-  // Cria o caminho para o package.json na raiz
   const packageJsonPath = path.join(__dirname, 'package.json');
-  // Lê o arquivo
   const packageJsonData = fs.readFileSync(packageJsonPath, 'utf8');
-  // Converte o texto para objeto JSON
   const packageData = JSON.parse(packageJsonData);
-  // Pega a versão e formata
   if (packageData.version) {
     botVersion = `v${packageData.version}`;
   }
 } catch (err) {
   console.error("Nao foi possivel ler o package.json para pegar a versao:", err.message);
 }
-// --- FIM DA ADIÇÃO ---
 
 // Importa nossas funcoes da pasta 'src'
 const { buscarAnime } = require('./src/anilist.js');
@@ -49,7 +43,7 @@ bot.start((ctx) => {
   ctx.reply(welcomeMessage);
 });
 
-// --- *** COMANDO /ajuda ATUALIZADO COM RODAPÉ *** ---
+// --- COMANDO /ajuda ATUALIZADO (Inclui Passcode e Manual) ---
 bot.command('ajuda', (ctx) => {
   const helpMessage = `
 Olá! Aqui está como usar o Thumber Bot:
@@ -59,25 +53,26 @@ Use o comando \`/capa [NOME_DO_ANIME]\`
 
 O que acontece depois:
 
-**1. 🔍 Fonte dos Dados:** O bot perguntará se você quer buscar os dados no "🔗 AniList" ou preencher "✍️ Manual".
-(Para animes não encontrados, use "✍️ Manual").
+**1. 🔍 Fonte dos Dados:** Escolha como iniciar:
+* **🔗 AniList:** Busca dados automáticos.
+* **✍️ Manual:** Cria do zero (para obras sem registro).
+* **🔐 Passcode:** Cola um código para restaurar uma capa antiga.
 
-**2. 🎨 Layout:** Você precisará escolher um modelo de capa (📺 TV, 🎬 Filme ou 📼 ONA).
+**2. 🎨 Layout:** Escolha o modelo (📺 TV, 🎬 Filme ou 📼 ONA).
 
-**3. ✏️ Edição:** Você poderá editar todas as informações usando os botões (título, estúdio, tags, classificação) e até trocar as imagens de pôster e fundo (enviando um link ou fazendo upload).
+**3. ✏️ Edição:** Edite todas as informações (título, estúdio, tags, classificação) e troque imagens (pôster/fundo) enviando links ou arquivos.
 
-**4. ✅ Gerar:** Quando tudo estiver perfeito, clique em "Gerar Capa" e o bot a enviará para você em segundos!
+**4. ✅ Gerar:** Clique em "Gerar Capa" para receber a imagem final e o seu **Passcode** de segurança (para edições futuras)!
 
 ---
 *Thumber Bot ${botVersion}*
-`; // <-- RODAPÉ ADICIONADO AQUI
+`; 
 
   ctx.reply(helpMessage, { parse_mode: 'Markdown' });
 });
-// --- FIM DA ATUALIZAÇÃO ---
 
 
-// --- COMANDO /capa (Sem alteração) ---
+// --- COMANDO /capa ---
 bot.command('capa', checkPermission, async (ctx) => {
   try {
     const nomeDoAnime = ctx.message.text.replace('/capa', '').trim();
@@ -102,7 +97,6 @@ registerEvents(bot, checkPermission);
 // --- INICIA O BOT ---
 carregarFontes().then(() => {
   bot.launch();
-  // Loga a versão no console também
   console.log(`Bot REATORADO iniciado e rodando (Versão ${botVersion})...`);
 }).catch(err => {
   console.error('Falha ao carregar fontes no inicio!', err);
