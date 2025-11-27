@@ -1,5 +1,5 @@
 // ARQUIVO: src/events.js
-// (ATUALIZADO: Importa passcode.js em vez de utils.js)
+// (ATUALIZADO: Removido o action do passcode, pois agora é comando)
 
 const { gerarCapa } = require('./image.js');
 const { 
@@ -11,10 +11,7 @@ const {
 } = require('./confirmation.js');
 const { traduzirTemporada } = require('./utils.js');
 const { buscarAnime } = require('./anilist.js'); 
-
-// --- *** MUDANÇA AQUI: Importa do novo arquivo *** ---
-const { gerarPasscode, lerPasscode } = require('./passcode.js'); 
-// ----------------------------------------------------
+const { gerarPasscode, lerPasscode } = require('./passcode.js');
 
 async function irParaMenuEdicao(ctx) {
   const layout = ctx.session.animeData.layout || 'TV';
@@ -100,12 +97,7 @@ function registerEvents(bot, checkPermission) {
     } catch (err) { console.error('ERRO EM source_manual:', err); }
   });
 
-  bot.action('source_passcode', checkPermission, async (ctx) => {
-    if (!ctx.session || ctx.session.state !== 'source_select') return ctx.answerCbQuery();
-    ctx.session.state = 'awaiting_passcode';
-    await ctx.deleteMessage();
-    await ctx.reply('🔐 Por favor, cole o seu **Passcode** aqui:', { parse_mode: 'Markdown' });
-  });
+  // (O handler 'source_passcode' foi removido daqui pois virou comando)
 
   // --- ETAPA 1: LAYOUT ---
 
@@ -270,6 +262,7 @@ function registerEvents(bot, checkPermission) {
     } catch (err) { console.error('ERRO AO PROCESSAR TEXTO:', err); }
   });
 
+  // --- (Sem alteracao no handler de fotos) ---
   bot.on('photo', checkPermission, async (ctx) => {
     try {
       if (ctx.session.state !== 'awaiting_input' || !ctx.session.animeData) { return; }
@@ -299,7 +292,7 @@ function registerEvents(bot, checkPermission) {
     } catch (err) { console.error('ERRO AO PROCESSAR FOTO:', err); }
   });
 
-  // --- ETAPA 4: CLASSIFICACAO ---
+  // --- ETAPA 4: HANDLERS DE CLASSIFICACAO (Sem alteracao) ---
   bot.action(
     [
       'set_rating_L', 'set_rating_10', 'set_rating_12', 
