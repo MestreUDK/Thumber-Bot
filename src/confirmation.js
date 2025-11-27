@@ -1,5 +1,5 @@
 // ARQUIVO: src/confirmation.js
-// (ATUALIZADO: Botão Passcode adicionado)
+// (ATUALIZADO: Botão Passcode removido)
 
 const { Markup } = require('telegraf');
 const { traduzirTemporada } = require('./utils.js');
@@ -34,7 +34,7 @@ Modelo Atual: ` + "```" + `${layout}` + "```" + `
 }
 
 
-// --- FUNCAO 2: Menu de Edicao COMPLETO (TV/ONA) (Sem alteração) ---
+// --- FUNCAO 2: Menu de Edicao COMPLETO (Sem alteração) ---
 async function enviarMenuEdicaoCompleto(ctx) {
   const animeData = ctx.session.animeData;
   if (!animeData) {
@@ -99,7 +99,7 @@ Classificação: ${classificacao}
   await ctx.reply(texto, botoes);
 }
 
-// --- FUNCAO 3: Menu de Edicao SIMPLES (Filme) (Sem alteração) ---
+// --- FUNCAO 3: Menu de Edicao SIMPLES (Sem alteração) ---
 async function enviarMenuEdicaoFilme(ctx) {
   const animeData = ctx.session.animeData;
   if (!animeData) {
@@ -191,15 +191,13 @@ Como você quer obter os dados para:
 ` + "```" + `${nomeDoAnime}` + "```" + `
 `;
 
-  // --- *** MUDANÇA: Botão Passcode Adicionado *** ---
+  // --- *** MUDANÇA: Botão Passcode Removido *** ---
   const botoes = Markup.inlineKeyboard([
     [
       Markup.button.callback('🔗 Anilist', 'source_anilist'),
       Markup.button.callback('✍️ Manual', 'source_manual')
     ],
-    [
-      Markup.button.callback('🔐 Passcode (Restaurar Capa)', 'source_passcode') // <-- NOVO
-    ],
+    // A linha do Passcode foi removida daqui
     [
       Markup.button.callback('❌ Cancelar Busca', 'cancel_edit')
     ]
