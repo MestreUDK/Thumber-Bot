@@ -43,7 +43,7 @@ bot.start((ctx) => {
   ctx.reply(welcomeMessage);
 });
 
-// --- COMANDO /ajuda (Versão HTML - À Prova de Erros) ---
+// --- COMANDO /ajuda ATUALIZADO ---
 bot.command('ajuda', (ctx) => {
   const helpMessage = `
 Olá! Aqui está como usar o Thumber Bot:
@@ -52,12 +52,15 @@ Use o comando:
 <code>/capa Nome do Anime</code>
 <i>Exemplo: /capa To Your Eternity</i>
 
+Ou use o comando:
+<code>/passcode</code>
+<i>Para restaurar uma capa antiga usando um código.</i>
+
 O que acontece depois:
 
 <b>1. 🔍 Fonte dos Dados:</b> Escolha como iniciar:
 • <b>🔗 AniList:</b> Busca dados automáticos.
 • <b>✍️ Manual:</b> Cria do zero (para obras sem registro).
-• <b>🔐 Passcode:</b> Cola um código para restaurar uma capa antiga.
 
 <b>2. 🎨 Layout:</b> Escolha o modelo (📺 TV, 🎬 Filme ou 📼 ONA).
 
@@ -69,7 +72,6 @@ O que acontece depois:
 <i>Thumber Bot ${botVersion}</i>
 `; 
 
-  // Usamos parse_mode: 'HTML' para evitar erros de Markdown
   ctx.reply(helpMessage, { parse_mode: 'HTML' });
 });
 
@@ -90,6 +92,13 @@ bot.command('capa', checkPermission, async (ctx) => {
     console.error('ERRO CRITICO NO COMANDO /CAPA:', err);
     return ctx.reply(`Ocorreu um erro critico: ${err.message}`);
   }
+});
+
+// --- *** NOVO COMANDO /passcode *** ---
+bot.command('passcode', checkPermission, async (ctx) => {
+  // Define o estado para esperar o código
+  ctx.session.state = 'awaiting_passcode';
+  ctx.reply('🔐 Por favor, envie o seu **Passcode** agora:', { parse_mode: 'Markdown' });
 });
 
 // --- REGISTRA TODOS OS OUTROS EVENTOS ---
