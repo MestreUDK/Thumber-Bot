@@ -15,6 +15,14 @@ query ($search: String) {
     genres
     averageScore
     format
+    status
+    description(asHtml: false)
+    startDate {
+      year
+    }
+    endDate {
+      year
+    }
     coverImage {
       large
     }
