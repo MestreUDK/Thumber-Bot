@@ -1,5 +1,5 @@
 // ARQUIVO: src/passcode.js
-// (CORRIGIDO: Limpa quebras de linha E remove dados inúteis)
+// (CORRIGIDO: Limpeza de quebra de linha + Otimização de campos vazios)
 
 const zlib = require('zlib');
 const KEY_MAP = require('./config/passcode_keys.js');
@@ -35,14 +35,19 @@ function minifyObject(obj) {
     for (const key in obj) {
       let value = obj[key];
       
-      // --- OTIMIZAÇÃO: Não salva campos nulos ou indefinidos ---
+      // --- OTIMIZAÇÃO: IGNORA CAMPOS VAZIOS ---
+      // Se for null ou undefined, nem adiciona no Passcode.
+      // Isso cria naturalmente Passcodes "próprios" para cada tipo.
       if (value === null || value === undefined) continue;
-      // --------------------------------------------------------
+      // ----------------------------------------
 
       const newKey = KEY_MAP[key] || key;
+      
+      // Comprime URL se necessário
       if (key === 'large' || key === 'bannerImage' || key === 'coverImage') {
          if (typeof value === 'string') value = compressUrl(value);
       }
+      
       newObj[newKey] = minifyObject(value);
     }
     return newObj;
@@ -57,6 +62,7 @@ function unminifyObject(obj) {
     for (const key in obj) {
       const originalKey = REVERSE_MAP[key] || key;
       let value = obj[key];
+      
       if (originalKey === 'large' || originalKey === 'bannerImage' || originalKey === 'coverImage') {
          if (typeof value === 'string') value = decompressUrl(value);
       }
@@ -85,10 +91,11 @@ function lerPasscode(passcodeString) {
   try {
     if (!passcodeString) return null;
 
-    // --- CORREÇÃO DO ERRO DE LEITURA ---
-    // Remove qualquer coisa que não seja letra/número (espaços, enters, crases)
+    // --- CORREÇÃO DE LEITURA (CRÍTICO) ---
+    // O Telegram quebra códigos grandes em linhas ou adiciona espaços.
+    // Isso remove TUDO que não é código antes de tentar ler.
     const limpo = passcodeString.replace(/[^a-zA-Z0-9\-_]/g, '');
-    // -----------------------------------
+    // -------------------------------------
     
     const buffer = Buffer.from(limpo, 'base64url');
     const decompressedBuffer = zlib.inflateSync(buffer);
