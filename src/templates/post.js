@@ -1,45 +1,74 @@
 // ARQUIVO: src/templates/post.js
-const { traduzirTemporada } = require('../utils.js');
+// (ATUALIZADO: Tradução de Tags e Classificação Híbrida)
+
+const { traduzirTemporada, formatarClassificacaoTxt } = require('../utils.js');
+const fs = require('fs');
+const path = require('path');
+
+// Carrega o dicionário de tags para tradução
+let tagConfig = {};
+try {
+  const configPath = path.join(__dirname, '..', '..', 'tag_config.json');
+  tagConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+} catch (e) { console.error("Erro ao carregar tag_config no template", e); }
+
 
 function formatarPost(anime) {
-  // 1. Tratamento de Dados
+  // 1. Tratamento de Dados Básicos
   const titulo = anime.title.romaji || "Desconhecido";
   const alternativo = anime.title.english ? `(${anime.title.english})` : "";
-  const abrev = anime.abrev || "{_Abrev_}"; // Campo novo
+  const abrev = anime.abrev || "{_Abrev_}"; 
   
-  // Formata Tags com #
-  const tagsFormatadas = (anime.genres || []).map(t => `#${t.replace(/\s+/g, '_')}`).join(' ');
+  // --- TRADUÇÃO DE TAGS ---
+  // Pega a tag em ingles (Action), busca no JSON, retorna a tradução (AÇÃO) ou original
+  const tagsFormatadas = (anime.genres || []).map(tag => {
+      const upper = tag.toUpperCase().trim();
+      // Tenta achar a tradução no dicionário, se não achar, usa a tag original
+      const translated = (tagConfig[upper] && tagConfig[upper].text) ? tagConfig[upper].text : tag;
+      // Formata como #Tag_Exemplo (Capitalizada fica mais bonito que tudo maiusculo)
+      // Vamos deixar como o dicionário manda (Maiúsculo) ou Capitalizar? 
+      // O seu exemplo pedia #gênero. Vou manter como está no dicionário (geralmente UPPER).
+      return `#${translated.replace(/\s+/g, '_')}`;
+  }).join(' & ');
   
-  // Tratamento de Audio (Manual)
-  const audio = anime.audio || "#legendado | #dublado"; // Default
+  const audio = anime.audio || "#legendado | #dublado"; 
   
-  // Tratamento de Ano e Status
+  // Datas
   const anoInicio = anime.startDate && anime.startDate.year ? anime.startDate.year : "????";
   const anoFim = anime.endDate && anime.endDate.year ? anime.endDate.year : "";
   const anoStr = anoFim ? `${anoInicio} à ${anoFim}` : `${anoInicio}`;
   
-  // Temporada e Status
   const temporada = anime.season ? `#${traduzirTemporada(anime.season).toLowerCase()}` : "#indefinida";
-  const status = anime.status === 'FINISHED' ? 'Completo' : (anime.status === 'RELEASING' ? 'Em Lançamento' : 'Indefinido');
+  
+  // Status (Tradução simples)
+  let status = "Indefinido";
+  if (anime.status === 'FINISHED') status = "Completo";
+  if (anime.status === 'RELEASING') status = "Em Lançamento";
+  if (anime.status === 'NOT_YET_RELEASED') status = "Não Lançado";
   
   const estudio = (anime.studios && anime.studios.nodes.length > 0) 
     ? `#${anime.studios.nodes[0].name.replace(/\s+/g, '')}` 
     : "#Desconhecido";
     
-  const classificacao = anime.classificacaoManual ? `+${anime.classificacaoManual}` : "Livre/Indefinida";
+  // --- CLASSIFICAÇÃO HÍBRIDA ---
+  // Usa o campo 'classificacaoManual' (se editado) ou tenta pegar da API se existisse
+  // Como sua API query não traz 'rating' nativo do Anilist, usamos o manual ou padrão.
+  const rawRating = anime.classificacaoManual || "Indefinida";
+  const classificacao = formatarClassificacaoTxt(rawRating);
+
   const tipo = anime.format ? `#${anime.format}` : "#TV";
   
-  // Dados Específicos de Temporada (Manuais)
+  // Dados Manuais Específicos
   const numTemporada = anime.seasonNum || "1";
   const episodios = anime.episodes || "?";
   const parte = anime.partNum || "1";
   const nomeTemporada = anime.seasonName || "Nome da temporada";
   
-  // Sinopse (Limpa tags HTML que o Anilist manda, como <br>)
+  // Sinopse Limpa
   let sinopse = anime.description || "Sinopse indisponível.";
   sinopse = sinopse.replace(/<br>/g, "\n").replace(/<i>/g, "").replace(/<\/i>/g, "");
 
-  // 2. Montagem do Template
+  // 2. O MODELO (Template)
   return `
 ⁣⛩️ | *${titulo}* ${alternativo}
 🏮 | ${abrev}
@@ -51,7 +80,7 @@ function formatarPost(anime) {
 💈 | Temporada | ${temporada}
 
 🎥 | Estúdio | ${estudio}
-🚥 | Etária | ${classificacao} (classificação indicativa)
+🚥 | Etária | ${classificacao}
 📺 | Tipo | ${tipo}
 🆙 | Status | ${status}
 
