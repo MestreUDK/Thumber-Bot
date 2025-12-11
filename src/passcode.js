@@ -1,5 +1,5 @@
 // ARQUIVO: src/passcode.js
-// (CORRIGIDO: Remove quebras de linha e sujeira do Telegram)
+// (CORRIGIDO: Limpa quebras de linha E remove dados inúteis)
 
 const zlib = require('zlib');
 const KEY_MAP = require('./config/passcode_keys.js');
@@ -26,14 +26,20 @@ function decompressUrl(url) {
   return url;
 }
 
-// --- Funções de Minificação ---
+// --- Funções de Minificação (OTIMIZADA) ---
 function minifyObject(obj) {
-  if (Array.isArray(obj)) return obj.map(minifyObject);
-  else if (obj !== null && typeof obj === 'object') {
+  if (Array.isArray(obj)) {
+    return obj.map(minifyObject);
+  } else if (obj !== null && typeof obj === 'object') {
     const newObj = {};
     for (const key in obj) {
-      const newKey = KEY_MAP[key] || key;
       let value = obj[key];
+      
+      // --- OTIMIZAÇÃO: Não salva campos nulos ou indefinidos ---
+      if (value === null || value === undefined) continue;
+      // --------------------------------------------------------
+
+      const newKey = KEY_MAP[key] || key;
       if (key === 'large' || key === 'bannerImage' || key === 'coverImage') {
          if (typeof value === 'string') value = compressUrl(value);
       }
@@ -79,9 +85,10 @@ function lerPasscode(passcodeString) {
   try {
     if (!passcodeString) return null;
 
-    // --- *** A CORREÇÃO ESTÁ AQUI *** ---
-    // Remove TUDO que não for caractere de Passcode (incluindo quebras de linha do Telegram)
+    // --- CORREÇÃO DO ERRO DE LEITURA ---
+    // Remove qualquer coisa que não seja letra/número (espaços, enters, crases)
     const limpo = passcodeString.replace(/[^a-zA-Z0-9\-_]/g, '');
+    // -----------------------------------
     
     const buffer = Buffer.from(limpo, 'base64url');
     const decompressedBuffer = zlib.inflateSync(buffer);
