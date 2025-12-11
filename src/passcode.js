@@ -1,16 +1,16 @@
 // ARQUIVO: src/passcode.js
-// (ATUALIZADO: Importa a configuração de chaves)
+// (ATUALIZADO: Importa a config correta e trata erros melhor)
 
 const zlib = require('zlib');
 // Importa o mapa de chaves da pasta config
 const KEY_MAP = require('./config/passcode_keys.js');
 
-// Cria o mapa reverso dinamicamente para ler o código depois
+// Cria o mapa reverso dinamicamente
 const REVERSE_MAP = Object.fromEntries(
   Object.entries(KEY_MAP).map(([k, v]) => [v, k])
 );
 
-// --- Lógica de URL (Mantida) ---
+// --- Lógica de URL ---
 function compressUrl(url) {
   if (!url || typeof url !== 'string') return url;
   const botToken = process.env.BOT_TOKEN;
@@ -28,7 +28,7 @@ function decompressUrl(url) {
   return url;
 }
 
-// --- Funções de Minificação (Mantidas) ---
+// --- Funções de Minificação ---
 function minifyObject(obj) {
   if (Array.isArray(obj)) return obj.map(minifyObject);
   else if (obj !== null && typeof obj === 'object') {
@@ -63,7 +63,7 @@ function unminifyObject(obj) {
   return obj;
 }
 
-// --- Funções Principais Exportadas ---
+// --- Funções Principais ---
 
 function gerarPasscode(animeData) {
   try {
@@ -79,12 +79,16 @@ function gerarPasscode(animeData) {
 
 function lerPasscode(passcodeString) {
   try {
-    const buffer = Buffer.from(passcodeString, 'base64url');
+    // Limpeza de segurança: remove espaços e crases se o usuário copiar errado
+    const limpo = passcodeString.replace(/[\s`]/g, '');
+    
+    const buffer = Buffer.from(limpo, 'base64url');
     const decompressedBuffer = zlib.inflateSync(buffer);
     const jsonStr = decompressedBuffer.toString();
     const minified = JSON.parse(jsonStr);
     return unminifyObject(minified);
   } catch (e) {
+    console.error('Erro ao ler passcode:', e.message);
     return null; 
   }
 }
