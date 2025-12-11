@@ -40,8 +40,8 @@ function formatarClassificacaoTxt(apiRating) {
       '10': 'PG',
       '12': 'PG-13',
       '14': 'PG-13', // ou TV-14
-      '16': 'R-17',
-      '18': 'R+ / NC-17'
+      '16': 'R-17 / R+',
+      '18': 'Rx / NC-17'
   };
 
   // Se o input for um dos manuais (10, 12, 14...), retornamos o formato híbrido
@@ -55,8 +55,8 @@ function formatarClassificacaoTxt(apiRating) {
   // Usado quando a origem é ANILIST (vem PG-13)
   let nacional = "Indefinida";
   if (rating === 'G' || rating === 'ALL') nacional = 'L';
-  else if (rating === 'PG') nacional = 'A10';
-  else if (rating === 'PG-13') nacional = 'A14'; // Anilist PG-13 geralmente vira 12 ou 14
+  else if (rating === 'PG') nacional = 'A12';
+  else if (rating === 'PG-13') nacional = 'A14';
   else if (rating === 'R+' || rating === 'R-17' || rating === 'R') nacional = 'A16';
   else if (rating === 'NC-17' || rating === 'RX') nacional = 'A18';
   else nacional = rating; 
