@@ -1,8 +1,8 @@
-// Arquivo: src/events/sources.js
-
+// ARQUIVO: src/events/sources.js
 const { buscarAnime } = require('../anilist.js');
-// --- *** MUDANÇA: Importamos também 'enviarMenuEdicao' *** ---
-const { enviarMenuLayout, enviarMenuFonteDados, enviarMenuEdicao } = require('../menus/index.js');
+const { enviarMenuLayout, enviarMenuFonteDados } = require('../menus/index.js');
+// Importamos a função de navegação inteligente
+const { irParaMenuEdicao } = require('./common.js');
 
 module.exports = (bot, checkPermission) => {
   
@@ -27,7 +27,6 @@ module.exports = (bot, checkPermission) => {
       anime.abrev = null; anime.audio = null;
       anime.seasonNum = null; anime.partNum = null; anime.seasonName = null;
 
-      // Define layout padrão baseado no formato, mesmo sem menu
       const formato = anime.format ? String(anime.format).toUpperCase() : 'TV';
       if (formato === 'MOVIE') anime.layout = 'FILME';
       else if (formato === 'ONA') anime.layout = 'ONA';
@@ -35,17 +34,15 @@ module.exports = (bot, checkPermission) => {
 
       ctx.session.animeData = anime; 
       
-      // --- *** LOGICA DE PULAR ETAPA (POST) *** ---
+      // --- LÓGICA DE NAVEGAÇÃO ---
       if (ctx.session.isPostMode) {
-          // Se for POST, vai direto para a edição
           ctx.session.state = 'main_edit';
-          await enviarMenuEdicao(ctx);
+          // Usa a função centralizada para abrir o menu de Post
+          await irParaMenuEdicao(ctx);
       } else {
-          // Se for CAPA, vai para a escolha de layout
           ctx.session.state = 'layout_select';
           await enviarMenuLayout(ctx);
       }
-      // ---------------------------------------------
 
     } catch (err) { console.error('ERRO EM source_anilist:', err); }
   });
@@ -69,17 +66,16 @@ module.exports = (bot, checkPermission) => {
       ctx.session.animeData = anime;
       await ctx.deleteMessage();
 
-      // --- *** LOGICA DE PULAR ETAPA (POST) *** ---
+      // --- LÓGICA DE NAVEGAÇÃO ---
       if (ctx.session.isPostMode) {
           ctx.session.state = 'main_edit'; 
           await ctx.reply('Modo manual ativado (Post).');
-          await enviarMenuEdicao(ctx);
+          await irParaMenuEdicao(ctx);
       } else {
           ctx.session.state = 'layout_select'; 
           await ctx.reply('Modo manual ativado. Escolha o layout.');
           await enviarMenuLayout(ctx);
       }
-      // ---------------------------------------------
 
     } catch (err) { console.error('ERRO EM source_manual:', err); }
   });
