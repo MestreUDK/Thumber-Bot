@@ -48,25 +48,24 @@ bot.command('ajuda', (ctx) => {
   const helpMessage = `
 Olá! Aqui está como usar o Thumber Bot:
 
-Use o comando:
-<code>/capa Nome do Anime</code>
-<i>Exemplo: /capa To Your Eternity</i>
+<b>Criação:</b>
+<code>/capa Nome do Anime</code> (Gera Imagem)
+<code>/post Nome do Anime</code> (Gera Texto)
 
-Ou use o comando:
-<code>/passcode</code>
-<i>Para restaurar uma capa antiga usando um código.</i>
+<b>Restauração:</b>
+<code>/passcode</code> (Cola um código antigo)
 
 O que acontece depois:
 
 <b>1. 🔍 Fonte dos Dados:</b> Escolha como iniciar:
 • <b>🔗 AniList:</b> Busca dados automáticos.
-• <b>✍️ Manual:</b> Cria do zero (para obras sem registro).
+• <b>✍️ Manual:</b> Cria do zero.
 
 <b>2. 🎨 Layout:</b> Escolha o modelo (📺 TV, 🎬 Filme ou 📼 ONA).
 
-<b>3. ✏️ Edição:</b> Edite todas as informações (título, estúdio, tags, classificação) e troque imagens (pôster/fundo) enviando links ou arquivos.
+<b>3. ✏️ Edição:</b> Edite todas as informações e troque imagens.
 
-<b>4. ✅ Gerar:</b> Clique em "Gerar Capa" para receber a imagem final e o seu <b>Passcode</b> de segurança (para edições futuras)!
+<b>4. ✅ Gerar:</b> Receba sua Capa (ou Post) e o <b>Passcode</b> de segurança!
 
 ---
 <i>Thumber Bot ${botVersion}</i>
@@ -76,7 +75,7 @@ O que acontece depois:
 });
 
 
-// --- COMANDO /capa ---
+// --- COMANDO /capa (Gera Imagem) ---
 bot.command('capa', checkPermission, async (ctx) => {
   try {
     const nomeDoAnime = ctx.message.text.replace('/capa', '').trim();
@@ -85,7 +84,8 @@ bot.command('capa', checkPermission, async (ctx) => {
     }
 
     ctx.session.searchTitle = nomeDoAnime; 
-    ctx.session.state = 'source_select'; 
+    ctx.session.state = 'source_select';
+    ctx.session.isPostMode = false; // <--- Define modo CAPA
     await enviarMenuFonteDados(ctx); 
 
   } catch (err) {
@@ -94,7 +94,26 @@ bot.command('capa', checkPermission, async (ctx) => {
   }
 });
 
-// --- *** NOVO COMANDO /passcode *** ---
+// --- COMANDO /post (Gera Texto) ---
+bot.command('post', checkPermission, async (ctx) => {
+  try {
+    const nomeDoAnime = ctx.message.text.replace('/post', '').trim();
+    if (!nomeDoAnime) {
+      return ctx.reply('Por favor, me diga o nome do anime. Ex: /post To Your Eternity');
+    }
+
+    ctx.session.searchTitle = nomeDoAnime; 
+    ctx.session.state = 'source_select';
+    ctx.session.isPostMode = true; // <--- Define modo POST
+    await enviarMenuFonteDados(ctx); 
+
+  } catch (err) {
+    console.error('ERRO CRITICO NO COMANDO /POST:', err);
+    return ctx.reply(`Ocorreu um erro critico: ${err.message}`);
+  }
+});
+
+// --- COMANDO /passcode ---
 bot.command('passcode', checkPermission, async (ctx) => {
   // Define o estado para esperar o código
   ctx.session.state = 'awaiting_passcode';
