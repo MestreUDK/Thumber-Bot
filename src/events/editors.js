@@ -1,6 +1,6 @@
 // Arquivo: src/events/editors.js
 
-const { enviarMenuClassificacao } = require('../confirmation.js');
+const { enviarMenuClassificacao } = require('../menus/index.js');
 const { lerPasscode } = require('../passcode.js');
 const { irParaMenuEdicao } = require('./common.js');
 
