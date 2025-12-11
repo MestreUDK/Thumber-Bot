@@ -22,7 +22,7 @@ try {
 // Importa nossas funcoes da pasta 'src'
 const { buscarAnime } = require('./src/anilist.js');
 const { carregarFontes } = require('./src/image.js'); 
-const { enviarMenuLayout, enviarMenuFonteDados } = require('./src/confirmation.js'); 
+const { enviarMenuLayout, enviarMenuFonteDados } = require('./menus/index.js'); 
 // --- *** IMPORTAÇÃO CORRIGIDA *** ---
 const { registerEvents } = require('./src/events/index.js'); // Aponta para a nova pasta
 const { checkPermission, allowedIds } = require('./src/security.js');
