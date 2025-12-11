@@ -1,6 +1,6 @@
 // Arquivo: src/events/navigation.js
 
-const { enviarMenuLayout, enviarMenuFonteDados } = require('../confirmation.js');
+const { enviarMenuLayout, enviarMenuFonteDados } = require('../menus/index.js');
 const { irParaMenuEdicao } = require('./common.js');
 
 module.exports = (bot, checkPermission) => {
