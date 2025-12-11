@@ -1,0 +1,62 @@
+// Arquivo: src/events/sources.js
+
+const { buscarAnime } = require('../anilist.js');
+const { enviarMenuLayout, enviarMenuFonteDados } = require('../confirmation.js');
+
+module.exports = (bot, checkPermission) => {
+  
+  // --- ANILIST ---
+  bot.action('source_anilist', checkPermission, async (ctx) => {
+    try {
+      if (!ctx.session || ctx.session.state !== 'source_select') return ctx.answerCbQuery('Sessão expirada.');
+      const nomeDoAnime = ctx.session.searchTitle;
+      await ctx.deleteMessage();
+      await ctx.reply(`Buscando dados no AniList para: ${nomeDoAnime}...`);
+
+      const resultadoApi = await buscarAnime(nomeDoAnime);
+
+      if (!resultadoApi.success) {
+        await ctx.reply(`Falha ao buscar: ${resultadoApi.error}\n\nTente buscar manualmente.`);
+        return await enviarMenuFonteDados(ctx);
+      }
+
+      const anime = resultadoApi.data;
+      // Inicializa campos
+      anime.classificacaoManual = null; anime.infoManual = null; 
+      anime.abrev = null; anime.audio = null;
+      anime.seasonNum = null; anime.partNum = null; anime.seasonName = null;
+
+      const formato = anime.format ? String(anime.format).toUpperCase() : 'TV';
+      if (formato === 'MOVIE') anime.layout = 'FILME';
+      else if (formato === 'ONA') anime.layout = 'ONA';
+      else anime.layout = 'TV';
+
+      ctx.session.animeData = anime; 
+      ctx.session.state = 'layout_select';
+      await enviarMenuLayout(ctx);
+    } catch (err) { console.error('ERRO EM source_anilist:', err); }
+  });
+
+  // --- MANUAL ---
+  bot.action('source_manual', checkPermission, async (ctx) => {
+    try {
+      if (!ctx.session || ctx.session.state !== 'source_select') return ctx.answerCbQuery('Sessão expirada.');
+      const nomeDoAnime = ctx.session.searchTitle || "Anime Sem Título";
+      const anime = {
+        title: { romaji: nomeDoAnime, english: null },
+        season: null, seasonYear: null, episodes: null,
+        studios: { nodes: [] }, genres: [], averageScore: null,
+        format: 'TV', status: null, description: null,
+        startDate: { year: null }, endDate: { year: null },
+        coverImage: { large: null }, bannerImage: null,
+        classificacaoManual: null, infoManual: null, layout: 'TV',
+        abrev: null, audio: null, seasonNum: null, partNum: null, seasonName: null
+      };
+      ctx.session.animeData = anime;
+      ctx.session.state = 'layout_select'; 
+      await ctx.deleteMessage();
+      await ctx.reply('Modo manual ativado.');
+      await enviarMenuLayout(ctx);
+    } catch (err) { console.error('ERRO EM source_manual:', err); }
+  });
+};
