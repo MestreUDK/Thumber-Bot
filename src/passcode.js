@@ -1,5 +1,5 @@
 // ARQUIVO: src/passcode.js
-// (CORRIGIDO: Limpeza de string robusta)
+// (CORRIGIDO: Remove quebras de linha e sujeira do Telegram)
 
 const zlib = require('zlib');
 const KEY_MAP = require('./config/passcode_keys.js');
@@ -8,6 +8,7 @@ const REVERSE_MAP = Object.fromEntries(
   Object.entries(KEY_MAP).map(([k, v]) => [v, k])
 );
 
+// --- Lógica de URL ---
 function compressUrl(url) {
   if (!url || typeof url !== 'string') return url;
   const botToken = process.env.BOT_TOKEN;
@@ -25,6 +26,7 @@ function decompressUrl(url) {
   return url;
 }
 
+// --- Funções de Minificação ---
 function minifyObject(obj) {
   if (Array.isArray(obj)) return obj.map(minifyObject);
   else if (obj !== null && typeof obj === 'object') {
@@ -76,10 +78,9 @@ function gerarPasscode(animeData) {
 function lerPasscode(passcodeString) {
   try {
     if (!passcodeString) return null;
-    
-    // --- *** A CORREÇÃO MÁGICA ESTÁ AQUI *** ---
-    // Remove crases (`), espaços, quebras de linha e qualquer caractere estranho
-    // Mantém apenas letras, números, traços e underscores (alfabeto Base64URL)
+
+    // --- *** A CORREÇÃO ESTÁ AQUI *** ---
+    // Remove TUDO que não for caractere de Passcode (incluindo quebras de linha do Telegram)
     const limpo = passcodeString.replace(/[^a-zA-Z0-9\-_]/g, '');
     
     const buffer = Buffer.from(limpo, 'base64url');
