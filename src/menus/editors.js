@@ -1,21 +1,20 @@
-// Arquivo: src/menus/editors.js
+// ARQUIVO: src/menus/editors.js
 
 const { Markup } = require('telegraf');
 const { traduzirTemporada } = require('../utils.js');
 
+// --- Menu TV/ONA (Mantido) ---
 async function enviarMenuEdicaoCompleto(ctx) {
   const animeData = ctx.session.animeData;
   if (!animeData) return ctx.reply('Sessao expirada. Por favor, faca a busca novamente com /capa');
 
   const titulo = (animeData.title && animeData.title.romaji) || "N/A";
   const estudio = (animeData.studios && animeData.studios.nodes.length > 0) ? animeData.studios.nodes[0].name : 'N/A';
-  
   const temporada = animeData.season ? `${traduzirTemporada(animeData.season)} ${animeData.seasonYear}` : "N/A";
   const episodios = animeData.episodes || '??';
   const infoLinha = (animeData.infoManual !== null && animeData.infoManual !== undefined) 
       ? animeData.infoManual 
       : `${temporada} - ${episodios} EPISÓDIOS`;
-      
   const tags = (animeData.genres && animeData.genres.length > 0) ? animeData.genres.join(', ') : 'N/A';
   const classificacao = animeData.classificacaoManual || 'Nenhuma';
   const layout = animeData.layout || 'TV'; 
@@ -46,6 +45,7 @@ Classificação: ${classificacao}
   await ctx.reply(texto, botoes);
 }
 
+// --- Menu Filme (Mantido) ---
 async function enviarMenuEdicaoFilme(ctx) {
   const animeData = ctx.session.animeData;
   if (!animeData) return ctx.reply('Sessao expirada. Por favor, faca a busca novamente com /capa');
@@ -75,5 +75,52 @@ Classificação: ${classificacao}
   await ctx.reply(texto, botoes);
 }
 
-// Exportamos 'enviarMenuEdicao' como alias para 'enviarMenuEdicaoCompleto' para manter compatibilidade
-module.exports = { enviarMenuEdicao: enviarMenuEdicaoCompleto, enviarMenuEdicaoFilme };
+// --- *** NOVO: Menu Exclusivo para POST (Texto) *** ---
+async function enviarMenuEdicaoPost(ctx) {
+  const data = ctx.session.animeData;
+  if (!data) return ctx.reply('Sessão expirada. Use /post novamente.');
+
+  const titulo = (data.title && data.title.romaji) || "N/A";
+  const abrev = data.abrev || "(Vazio)";
+  const audio = data.audio || "Leg/Dub";
+  const seasonNum = data.seasonNum || "1";
+  const eps = data.episodes || "?";
+  
+  const texto = `
+📝 **Editor de Post (Texto)**
+
+` + "```" + `
+Título: ${titulo}
+Abrev: ${abrev}
+Áudio: ${audio}
+Temp: ${seasonNum} | Eps: ${eps}
+` + "```" + `
+`;
+
+  const botoes = Markup.inlineKeyboard([
+    [ Markup.button.callback('✅ Gerar Post', 'generate_final') ],
+    // Linha 1: Dados principais
+    [ Markup.button.callback('🏷️ Título', 'edit_title'), Markup.button.callback('🏮 Abrev.', 'edit_abrev') ],
+    // Linha 2: Detalhes técnicos
+    [ Markup.button.callback('🎧 Áudio', 'edit_audio'), Markup.button.callback('ℹ️ Sinopse', 'edit_synopsis') ],
+    // Linha 3: Dados da Temporada
+    [ Markup.button.callback('📌 Temp. (Nº)', 'edit_season_num'), Markup.button.callback('🔢 Episódios', 'edit_episodes') ],
+    // Linha 4: Mais dados de Temporada
+    [ Markup.button.callback('🔗 Parte', 'edit_part_num'), Markup.button.callback('🧩 Nome Temp.', 'edit_season_name') ],
+    // Linha 5: Padrões
+    [ Markup.button.callback('🎥 Estúdio', 'edit_studio'), Markup.button.callback('🎭 Tags', 'edit_tags') ],
+    // Linha 6: Classificação
+    [ Markup.button.callback('🚦 Classificação', 'edit_rating') ],
+    // Linha 7: Controle (Pôster é opcional no post, deixamos aqui caso queira trocar a imagem enviada junto)
+    [ Markup.button.callback('🖼️ Pôster (Opcional)', 'edit_poster'), Markup.button.callback('❌ Cancelar', 'cancel_edit') ]
+  ]);
+
+  try { if (ctx.callbackQuery) await ctx.deleteMessage(); } catch (e) {}
+  await ctx.reply(texto, botoes);
+}
+
+module.exports = { 
+    enviarMenuEdicao: enviarMenuEdicaoCompleto, 
+    enviarMenuEdicaoFilme,
+    enviarMenuEdicaoPost // <-- Exportando o novo menu
+};
