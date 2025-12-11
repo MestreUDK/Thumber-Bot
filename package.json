@@ -1,6 +1,6 @@
 {
   "name": "Thumber Bot",
-  "version": "1.4.6",
+  "version": "1.4.7",
   "description": "Bot para gerar capas e posts de anime",
   "main": "bot.js",
   "scripts": {
