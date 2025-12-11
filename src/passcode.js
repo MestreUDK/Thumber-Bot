@@ -1,25 +1,16 @@
 // ARQUIVO: src/passcode.js
+// (ATUALIZADO: Importa a configuração de chaves)
+
 const zlib = require('zlib');
+// Importa o mapa de chaves da pasta config
+const KEY_MAP = require('./config/passcode_keys.js');
 
-// 1. Dicionário de Mapeamento (Atualizado com novos campos do Post)
-const KEY_MAP = {
-  'title': 't', 'romaji': 'r', 'english': 'e',
-  'season': 's', 'seasonYear': 'y', 'episodes': 'ep',
-  'studios': 'st', 'nodes': 'n', 'name': 'nm',
-  'genres': 'g', 'averageScore': 'sc', 'format': 'fmt',
-  'coverImage': 'ci', 'large': 'l', 'bannerImage': 'bi',
-  'classificacaoManual': 'cm', 'infoManual': 'im', 'layout': 'la',
-  // --- Novos Campos do Post ---
-  'description': 'desc', 'status': 'stat',
-  'startDate': 'sd', 'endDate': 'ed', 'year': 'yr',
-  'abrev': 'abr', 'audio': 'aud', 'seasonNum': 'sn',
-  'partNum': 'pn', 'seasonName': 'snm'
-};
-
+// Cria o mapa reverso dinamicamente para ler o código depois
 const REVERSE_MAP = Object.fromEntries(
   Object.entries(KEY_MAP).map(([k, v]) => [v, k])
 );
 
+// --- Lógica de URL (Mantida) ---
 function compressUrl(url) {
   if (!url || typeof url !== 'string') return url;
   const botToken = process.env.BOT_TOKEN;
@@ -37,12 +28,13 @@ function decompressUrl(url) {
   return url;
 }
 
+// --- Funções de Minificação (Mantidas) ---
 function minifyObject(obj) {
   if (Array.isArray(obj)) return obj.map(minifyObject);
   else if (obj !== null && typeof obj === 'object') {
     const newObj = {};
     for (const key in obj) {
-      const newKey = KEY_MAP[key] || key;
+      const newKey = KEY_MAP[key] || key; // Usa a chave curta do config
       let value = obj[key];
       if (key === 'large' || key === 'bannerImage' || key === 'coverImage') {
          if (typeof value === 'string') value = compressUrl(value);
@@ -59,7 +51,7 @@ function unminifyObject(obj) {
   else if (obj !== null && typeof obj === 'object') {
     const newObj = {};
     for (const key in obj) {
-      const originalKey = REVERSE_MAP[key] || key;
+      const originalKey = REVERSE_MAP[key] || key; // Restaura chave original
       let value = obj[key];
       if (originalKey === 'large' || originalKey === 'bannerImage' || originalKey === 'coverImage') {
          if (typeof value === 'string') value = decompressUrl(value);
@@ -70,6 +62,8 @@ function unminifyObject(obj) {
   }
   return obj;
 }
+
+// --- Funções Principais Exportadas ---
 
 function gerarPasscode(animeData) {
   try {
