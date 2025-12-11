@@ -1,6 +1,6 @@
 // Arquivo: src/events/common.js
 
-const { enviarMenuEdicao, enviarMenuEdicaoFilme } = require('../confirmation.js');
+const { enviarMenuEdicao, enviarMenuEdicaoFilme } = require('../menus/index.js');
 
 async function irParaMenuEdicao(ctx) {
   const layout = ctx.session.animeData.layout || 'TV';
