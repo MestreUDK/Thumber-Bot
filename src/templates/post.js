@@ -14,19 +14,19 @@ let POST_TEMPLATE = "";
 try {
   POST_TEMPLATE = fs.readFileSync(path.join(__dirname, '..', '..', 'assets', 'templates', 'post.txt'), 'utf-8');
 } catch (e) {
-  console.error("ERRO CRITICO: Nao achei assets/templates/post.txt", e);
-  POST_TEMPLATE = "Erro: Template não encontrado.";
+  POST_TEMPLATE = "ERRO: Crie o arquivo assets/templates/post.txt";
 }
 
 function formatarPost(anime) {
-  // 1. Preparar Dados (Igual antes)
   const dados = {};
   
+  // 1. Título e Alternativo
   dados.titulo = anime.title.romaji || "Desconhecido";
+  // Se editou o alternativo (usamos title.english), usa ele. Se não, vazio.
   dados.alternativo = anime.title.english ? `(${anime.title.english})` : "";
   dados.abrev = anime.abrev || "{_Abrev_}";
   
-  // Tags
+  // 2. Tags Traduzidas
   dados.tags = (anime.genres || []).map(tag => {
       const upper = tag.toUpperCase().trim();
       const translated = (tagConfig[upper] && tagConfig[upper].text) ? tagConfig[upper].text : tag;
@@ -35,46 +35,63 @@ function formatarPost(anime) {
   
   dados.audio = anime.audio || "#legendado | #dublado"; 
   
-  // Datas
-  const anoInicio = anime.startDate && anime.startDate.year ? anime.startDate.year : "????";
-  const anoFim = anime.endDate && anime.endDate.year ? anime.endDate.year : "";
-  dados.ano = anoFim ? `${anoInicio} à ${anoFim}` : `${anoInicio}`;
+  // 3. Ano (Manual ou Automático)
+  if (anime.yearManual) {
+      dados.ano = anime.yearManual;
+  } else {
+      const anoInicio = anime.startDate && anime.startDate.year ? anime.startDate.year : "????";
+      const anoFim = anime.endDate && anime.endDate.year ? anime.endDate.year : "";
+      dados.ano = anoFim ? `${anoInicio} à ${anoFim}` : `${anoInicio}`;
+  }
   
-  dados.temporada = anime.season ? `#${traduzirTemporada(anime.season).toLowerCase()}` : "#indefinida";
+  // 4. Temporada (Manual/Link ou Automático)
+  if (anime.seasonManual) {
+      dados.temporada = anime.seasonManual; // Aceita link: [Texto](Url)
+  } else {
+      dados.temporada = anime.season ? `#${traduzirTemporada(anime.season).toLowerCase()}` : "#indefinida";
+  }
   
-  // Status
-  let st = "Indefinido";
-  if (anime.status === 'FINISHED') st = "Completo";
-  if (anime.status === 'RELEASING') st = "Em Lançamento";
-  if (anime.status === 'NOT_YET_RELEASED') st = "Não Lançado";
-  dados.status = st;
+  // 5. Status (Manual ou Automático)
+  if (anime.statusManual) {
+      dados.status = anime.statusManual;
+  } else {
+      let st = "Indefinido";
+      if (anime.status === 'FINISHED') st = "Completo";
+      if (anime.status === 'RELEASING') st = "Em Lançamento";
+      if (anime.status === 'NOT_YET_RELEASED') st = "Não Lançado";
+      dados.status = st;
+  }
   
+  // 6. Estúdio
   dados.estudio = (anime.studios && anime.studios.nodes.length > 0) 
     ? `#${anime.studios.nodes[0].name.replace(/\s+/g, '')}` : "#Desconhecido";
     
-  // Classificacao
+  // 7. Classificação
   const rawRating = anime.classificacaoManual || "Indefinida";
   dados.classificacao = formatarClassificacaoTxt(rawRating);
 
-  dados.tipo = anime.format ? `#${anime.format}` : "#TV";
+  // 8. Tipo (Manual ou Automático)
+  if (anime.typeManual) {
+      dados.tipo = anime.typeManual;
+  } else {
+      dados.tipo = anime.format ? `#${anime.format}` : "#TV";
+  }
   
-  // Manuais
+  // 9. Dados Manuais
   dados.numTemporada = anime.seasonNum || "1";
   dados.episodios = anime.episodes || "?";
   dados.parte = anime.partNum || "1";
   dados.nomeTemporada = anime.seasonName || "Nome da temporada";
   
-  // Sinopse
+  // 10. Sinopse
   let sin = anime.description || "Sinopse indisponível.";
+  // Limpeza básica de HTML
   sin = sin.replace(/<br>/g, "\n").replace(/<i>/g, "").replace(/<\/i>/g, "");
   dados.sinopse = sin;
 
-  // 2. Substituição no Template (Simples e Eficiente)
+  // Substituição no Template
   let textoFinal = POST_TEMPLATE;
-  
-  // Substitui cada {{chave}} pelo valor correspondente
   for (const [chave, valor] of Object.entries(dados)) {
-      // Regex global para trocar todas as ocorrencias
       textoFinal = textoFinal.split(`{{${chave}}}`).join(valor);
   }
   
