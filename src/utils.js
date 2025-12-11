@@ -16,8 +16,8 @@ function getRatingImageName(apiRating) {
   const rating = String(apiRating).toUpperCase();
   
   if (rating === 'G' || rating === 'ALL') return 'L.png';
-  if (rating === 'PG') return 'A10.png'; // Ajuste fino
-  if (rating === 'PG-13') return 'A12.png'; // ou A14
+  if (rating === 'PG') return 'A12.png'; // Ajuste fino
+  if (rating === 'PG-13') return 'A14.png'; // ou A14
   if (rating === 'R+' || rating === 'R-17' || rating === 'R') return 'A16.png';
   if (rating === 'NC-17' || rating === 'RX') return 'A18.png';
   
