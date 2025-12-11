@@ -1,7 +1,7 @@
 // ARQUIVO: src/config/passcode_keys.js
 
 const KEY_MAP = {
-  // Controle Interno
+  // Controle Interno (IMPORTANTE: Estava faltando)
   'mode': 'm',
 
   // Campos Básicos
@@ -16,12 +16,13 @@ const KEY_MAP = {
   'description': 'desc', 'abrev': 'abr', 'audio': 'aud',
   'seasonNum': 'sn', 'partNum': 'pn', 'seasonName': 'snm',
   
-  // Campos Manuais e URL
+  // Campos Manuais e URL (Novos da v1.4.5)
   'yearManual': 'ym', 
   'seasonManual': 'sm',
   'typeManual': 'tm', 
   'statusManual': 'stm',
-  'seasonUrl': 'surl'
+  'seasonUrl': 'surl',
+  'titleEnglish': 'en_t' // Usado no edit_alt_name
 };
 
 module.exports = KEY_MAP;
