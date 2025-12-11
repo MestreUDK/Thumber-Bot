@@ -1,5 +1,5 @@
 // ARQUIVO: src/passcode.js
-// (CORRIGIDO: Limpeza de quebra de linha + Otimização de campos vazios)
+// (CORRIGIDO E OTIMIZADO)
 
 const zlib = require('zlib');
 const KEY_MAP = require('./config/passcode_keys.js');
@@ -26,7 +26,7 @@ function decompressUrl(url) {
   return url;
 }
 
-// --- Funções de Minificação (OTIMIZADA) ---
+// --- Funções de Minificação (INTELIGENTE) ---
 function minifyObject(obj) {
   if (Array.isArray(obj)) {
     return obj.map(minifyObject);
@@ -35,15 +35,15 @@ function minifyObject(obj) {
     for (const key in obj) {
       let value = obj[key];
       
-      // --- OTIMIZAÇÃO: IGNORA CAMPOS VAZIOS ---
-      // Se for null ou undefined, nem adiciona no Passcode.
-      // Isso cria naturalmente Passcodes "próprios" para cada tipo.
+      // --- OTIMIZAÇÃO: LIXEIRA AUTOMÁTICA ---
+      // Se o campo for nulo (ex: 'sinopse' numa Capa), ele é ignorado.
+      // Isso cria um Passcode exclusivo apenas com o que importa.
       if (value === null || value === undefined) continue;
       // ----------------------------------------
 
       const newKey = KEY_MAP[key] || key;
       
-      // Comprime URL se necessário
+      // Comprime URL
       if (key === 'large' || key === 'bannerImage' || key === 'coverImage') {
          if (typeof value === 'string') value = compressUrl(value);
       }
@@ -92,8 +92,7 @@ function lerPasscode(passcodeString) {
     if (!passcodeString) return null;
 
     // --- CORREÇÃO DE LEITURA (CRÍTICO) ---
-    // O Telegram quebra códigos grandes em linhas ou adiciona espaços.
-    // Isso remove TUDO que não é código antes de tentar ler.
+    // Remove espaços, enters e crases que o Telegram adiciona
     const limpo = passcodeString.replace(/[^a-zA-Z0-9\-_]/g, '');
     // -------------------------------------
     
