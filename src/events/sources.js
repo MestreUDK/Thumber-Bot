@@ -1,7 +1,7 @@
 // Arquivo: src/events/sources.js
 
 const { buscarAnime } = require('../anilist.js');
-const { enviarMenuLayout, enviarMenuFonteDados } = require('../confirmation.js');
+const { enviarMenuLayout, enviarMenuFonteDados } = require('../menus/index.js');
 
 module.exports = (bot, checkPermission) => {
   
