@@ -1,8 +1,8 @@
-
 // ARQUIVO: src/passcode.js
-// (CORRIGIDO: Agora com limpeza REAL e otimização REAL)
+// (VERSÃO CORRIGIDA v1.4.9)
 
 const zlib = require('zlib');
+// 1. IMPORTAÇÃO EXTERNA (Seu código antigo não tinha isso)
 const KEY_MAP = require('./config/passcode_keys.js');
 
 const REVERSE_MAP = Object.fromEntries(
@@ -27,7 +27,7 @@ function decompressUrl(url) {
   return url;
 }
 
-// --- Funções de Minificação (OTIMIZADA) ---
+// --- Funções de Minificação ---
 function minifyObject(obj) {
   if (Array.isArray(obj)) {
     return obj.map(minifyObject);
@@ -36,10 +36,9 @@ function minifyObject(obj) {
     for (const key in obj) {
       let value = obj[key];
       
-      // --- CORREÇÃO 1: REMOVE DADOS INÚTEIS ---
-      // Se o valor for null ou undefined, NÃO salva no código.
-      if (value === null || value === undefined) continue;
-      // ----------------------------------------
+      // 2. FILTRO DE NULOS (Seu código antigo não tinha isso)
+      // Isso impede que dados de Capa sujem o Post e vice-versa
+      if (value === null || value === undefined) continue; 
 
       const newKey = KEY_MAP[key] || key;
       if (key === 'large' || key === 'bannerImage' || key === 'coverImage') {
@@ -87,10 +86,9 @@ function lerPasscode(passcodeString) {
   try {
     if (!passcodeString) return null;
 
-    // --- CORREÇÃO 2: LIMPEZA DE QUEBRA DE LINHA ---
-    // Remove espaços, enters e qualquer sujeira que o Telegram adiciona na cópia.
+    // 3. LIMPEZA DE TEXTO (Seu código antigo não tinha isso)
+    // Remove espaços, enters e crases que o Telegram adiciona ao copiar
     const limpo = passcodeString.replace(/[^a-zA-Z0-9\-_]/g, '');
-    // ---------------------------------------------
     
     const buffer = Buffer.from(limpo, 'base64url');
     const decompressedBuffer = zlib.inflateSync(buffer);
