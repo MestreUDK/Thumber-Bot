@@ -1,16 +1,13 @@
 // ARQUIVO: src/passcode.js
-// (ATUALIZADO: Importa a config correta e trata erros melhor)
+// (CORRIGIDO: Limpeza de string robusta)
 
 const zlib = require('zlib');
-// Importa o mapa de chaves da pasta config
 const KEY_MAP = require('./config/passcode_keys.js');
 
-// Cria o mapa reverso dinamicamente
 const REVERSE_MAP = Object.fromEntries(
   Object.entries(KEY_MAP).map(([k, v]) => [v, k])
 );
 
-// --- Lógica de URL ---
 function compressUrl(url) {
   if (!url || typeof url !== 'string') return url;
   const botToken = process.env.BOT_TOKEN;
@@ -28,13 +25,12 @@ function decompressUrl(url) {
   return url;
 }
 
-// --- Funções de Minificação ---
 function minifyObject(obj) {
   if (Array.isArray(obj)) return obj.map(minifyObject);
   else if (obj !== null && typeof obj === 'object') {
     const newObj = {};
     for (const key in obj) {
-      const newKey = KEY_MAP[key] || key; // Usa a chave curta do config
+      const newKey = KEY_MAP[key] || key;
       let value = obj[key];
       if (key === 'large' || key === 'bannerImage' || key === 'coverImage') {
          if (typeof value === 'string') value = compressUrl(value);
@@ -51,7 +47,7 @@ function unminifyObject(obj) {
   else if (obj !== null && typeof obj === 'object') {
     const newObj = {};
     for (const key in obj) {
-      const originalKey = REVERSE_MAP[key] || key; // Restaura chave original
+      const originalKey = REVERSE_MAP[key] || key;
       let value = obj[key];
       if (originalKey === 'large' || originalKey === 'bannerImage' || originalKey === 'coverImage') {
          if (typeof value === 'string') value = decompressUrl(value);
@@ -79,8 +75,12 @@ function gerarPasscode(animeData) {
 
 function lerPasscode(passcodeString) {
   try {
-    // Limpeza de segurança: remove espaços e crases se o usuário copiar errado
-    const limpo = passcodeString.replace(/[\s`]/g, '');
+    if (!passcodeString) return null;
+    
+    // --- *** A CORREÇÃO MÁGICA ESTÁ AQUI *** ---
+    // Remove crases (`), espaços, quebras de linha e qualquer caractere estranho
+    // Mantém apenas letras, números, traços e underscores (alfabeto Base64URL)
+    const limpo = passcodeString.replace(/[^a-zA-Z0-9\-_]/g, '');
     
     const buffer = Buffer.from(limpo, 'base64url');
     const decompressedBuffer = zlib.inflateSync(buffer);
