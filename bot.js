@@ -23,7 +23,8 @@ try {
 const { buscarAnime } = require('./src/anilist.js');
 const { carregarFontes } = require('./src/image.js'); 
 const { enviarMenuLayout, enviarMenuFonteDados } = require('./src/confirmation.js'); 
-const { registerEvents } = require('./src/events.js');
+// --- *** IMPORTAÇÃO CORRIGIDA *** ---
+const { registerEvents } = require('./src/events/index.js'); // Aponta para a nova pasta
 const { checkPermission, allowedIds } = require('./src/security.js');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
