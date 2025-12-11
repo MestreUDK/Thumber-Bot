@@ -1,7 +1,10 @@
 // ARQUIVO: src/events.js
-// (ATUALIZADO: Removido o action do passcode, pois agora é comando)
+// (ATUALIZADO: Suporte Híbrido para /capa e /post)
 
 const { gerarCapa } = require('./image.js');
+// --- *** NOVO IMPORT *** ---
+const { formatarPost } = require('./templates/post.js'); 
+// ---------------------------
 const { 
   enviarMenuLayout, 
   enviarMenuEdicao, 
@@ -27,17 +30,17 @@ async function irParaMenuEdicao(ctx) {
 function registerEvents(bot, checkPermission) {
 
   // --- ETAPA 0: FONTE DE DADOS ---
-  
+
   bot.action('source_anilist', checkPermission, async (ctx) => {
     try {
       if (!ctx.session || ctx.session.state !== 'source_select') return ctx.answerCbQuery('Sessão expirada. Use /capa novamente.');
 
       const nomeDoAnime = ctx.session.searchTitle;
       if (!nomeDoAnime) return ctx.answerCbQuery('Nome do anime não encontrado na sessão.');
-      
+
       await ctx.deleteMessage();
       await ctx.reply(`Buscando dados no AniList para: ${nomeDoAnime}...`);
-      
+
       const resultadoApi = await buscarAnime(nomeDoAnime);
 
       if (!resultadoApi.success) {
@@ -46,8 +49,17 @@ function registerEvents(bot, checkPermission) {
       }
 
       const anime = resultadoApi.data;
+      // Inicializa campos básicos
       anime.classificacaoManual = null; 
       anime.infoManual = null; 
+      
+      // --- Inicializa campos do POST para evitar undefined ---
+      anime.abrev = null;
+      anime.audio = null;
+      anime.seasonNum = null;
+      anime.partNum = null;
+      anime.seasonName = null;
+      // ------------------------------------------------------
 
       const formato = anime.format ? String(anime.format).toUpperCase() : 'TV';
       if (formato === 'MOVIE') {
@@ -64,13 +76,13 @@ function registerEvents(bot, checkPermission) {
 
     } catch (err) { console.error('ERRO EM source_anilist:', err); }
   });
-  
+
   bot.action('source_manual', checkPermission, async (ctx) => {
     try {
       if (!ctx.session || ctx.session.state !== 'source_select') return ctx.answerCbQuery('Sessão expirada. Use /capa novamente.');
-      
+
       const nomeDoAnime = ctx.session.searchTitle || "Anime Sem Título";
-      
+
       const anime = {
         title: { romaji: nomeDoAnime, english: null },
         season: null,
@@ -80,24 +92,31 @@ function registerEvents(bot, checkPermission) {
         genres: [], 
         averageScore: null,
         format: 'TV',
+        // Campos extras para o Post Manual
+        status: null, 
+        description: null,
+        startDate: { year: null }, 
+        endDate: { year: null },
+        // Imagens
         coverImage: { large: null },
         bannerImage: null,
+        // Nossos campos
         classificacaoManual: null,
         infoManual: null,
-        layout: 'TV' 
+        layout: 'TV',
+        // Campos extras do Post
+        abrev: null, audio: null, seasonNum: null, partNum: null, seasonName: null
       };
-      
+
       ctx.session.animeData = anime;
       ctx.session.state = 'layout_select'; 
-      
+
       await ctx.deleteMessage();
       await ctx.reply('Modo de preenchimento manual ativado. Escolha o layout.');
       await enviarMenuLayout(ctx);
-      
+
     } catch (err) { console.error('ERRO EM source_manual:', err); }
   });
-
-  // (O handler 'source_passcode' foi removido daqui pois virou comando)
 
   // --- ETAPA 1: LAYOUT ---
 
@@ -133,26 +152,50 @@ function registerEvents(bot, checkPermission) {
     await enviarMenuLayout(ctx);
   });
 
+  // --- *** GERAÇÃO FINAL HÍBRIDA (/post e /capa) *** ---
   bot.action('generate_final', checkPermission, async (ctx) => {
     if (!ctx.session || ctx.session.state !== 'main_edit') return ctx.answerCbQuery();
     try {
       await ctx.deleteMessage(); 
-      await ctx.reply('Gerando sua capa com os dados editados...');
+      
       const animeData = ctx.session.animeData;
+      const isPostMode = ctx.session.isPostMode; // Verificamos o modo
+
       if (!animeData) { return ctx.reply('Sessao expirada.'); }
-      
-      const resultadoImagem = await gerarCapa(animeData);
-      if (!resultadoImagem.success) {
-        return ctx.reply(`Erro ao gerar imagem: ${resultadoImagem.error}`);
+
+      if (isPostMode) {
+        // --- MODO POST: Gera Texto ---
+        await ctx.reply('📝 Gerando post de texto...');
+        const textoPost = formatarPost(animeData);
+        
+        // Tenta enviar com imagem (poster) se existir
+        if (animeData.coverImage && animeData.coverImage.large) {
+             try {
+                await ctx.replyWithPhoto(animeData.coverImage.large, { caption: textoPost, parse_mode: 'Markdown' });
+             } catch(e) {
+                // Se falhar a imagem (link quebrado), envia só texto
+                await ctx.reply(textoPost, { parse_mode: 'Markdown' });
+             }
+        } else {
+             // Sem imagem
+             await ctx.reply(textoPost, { parse_mode: 'Markdown' });
+        }
+
+      } else {
+        // --- MODO CAPA: Gera Imagem (Original) ---
+        await ctx.reply('🎨 Gerando sua capa com os dados editados...');
+        const resultadoImagem = await gerarCapa(animeData);
+        if (!resultadoImagem.success) {
+          return ctx.reply(`Erro ao gerar imagem: ${resultadoImagem.error}`);
+        }
+        await ctx.replyWithPhoto({ source: resultadoImagem.buffer });
       }
-      
-      await ctx.replyWithPhoto({ source: resultadoImagem.buffer });
 
       // --- GERA PASSCODE (AGORA OTIMIZADO) ---
       const passcode = gerarPasscode(animeData);
       if (passcode) {
          await ctx.reply(
-           `🔐 **Passcode da Capa**\n\nGuarde este código para editar esta capa novamente no futuro:\n\n` +
+           `🔐 **Passcode**\n\nGuarde este código para restaurar este conteúdo no futuro:\n\n` +
            "```" + passcode + "```", 
            { parse_mode: 'Markdown' }
          );
@@ -165,7 +208,7 @@ function registerEvents(bot, checkPermission) {
   bot.action('cancel_edit', checkPermission, async (ctx) => {
     ctx.session = null; 
     await ctx.deleteMessage();
-    await ctx.reply('Geracao cancelada.');
+    await ctx.reply('Operação cancelada.');
   });
 
   bot.action(['edit_title', 'edit_studio', 'edit_tags', 'edit_poster', 'edit_fundo', 'edit_info'], checkPermission, async (ctx) => {
@@ -218,8 +261,8 @@ function registerEvents(bot, checkPermission) {
   bot.on('text', checkPermission, async (ctx) => {
     try {
       if (ctx.message.text.startsWith('/')) return; 
-      
-      // --- CHECK DE PASSCODE (AGORA LÊ O FORMATO NOVO) ---
+
+      // --- CHECK DE PASSCODE ---
       if (ctx.session.state === 'awaiting_passcode') {
           const codigo = ctx.message.text.trim();
           const dadosRestaurados = lerPasscode(codigo);
@@ -231,10 +274,19 @@ function registerEvents(bot, checkPermission) {
           ctx.session.animeData = dadosRestaurados;
           ctx.session.state = 'main_edit'; 
           
-          await ctx.reply('✅ Passcode aceito! Dados restaurados com sucesso.');
+          // --- DETECÇÃO DE MODO INTELIGENTE ---
+          // Se o passcode tiver campos que só o /post tem (ex: description), ativamos o modo Post.
+          if (dadosRestaurados.description || dadosRestaurados.abrev) {
+             ctx.session.isPostMode = true;
+             await ctx.reply('✅ Passcode aceito! Dados de **POST** restaurados.');
+          } else {
+             ctx.session.isPostMode = false;
+             await ctx.reply('✅ Passcode aceito! Dados de **CAPA** restaurados.');
+          }
+          // ------------------------------------
+
           return await irParaMenuEdicao(ctx); 
       }
-      // ---------------------------------------
 
       if (ctx.session.state !== 'awaiting_input' || !ctx.session.animeData) { return; }
 
