@@ -98,12 +98,13 @@ Escolha o campo para alterar:
     [ Markup.button.callback('🏮 Abrev.', 'edit_abrev'), Markup.button.callback('🎧 Áudio', 'edit_audio') ],
     
     // Dados Técnicos (Novos)
-    [ Markup.button.callback('🗓️ Ano', 'edit_year'), Markup.button.callback('💈 Temporada (Link)', 'edit_season') ],
+    [ Markup.button.callback('🗓️ Ano', 'edit_year'), Markup.button.callback('💈 Temporada (Txt)', 'edit_season') ],
     [ Markup.button.callback('📺 Tipo', 'edit_type'), Markup.button.callback('🆙 Status', 'edit_status') ],
     
-    // Dados da Obra
-    [ Markup.button.callback('📌 Temp (Nº)', 'edit_season_num'), Markup.button.callback('🔢 Episódios', 'edit_episodes') ],
-    [ Markup.button.callback('🔗 Parte', 'edit_part_num'), Markup.button.callback('🧩 Nome Temp.', 'edit_season_name') ],
+    // Dados da Obra (Com o Link da Temporada)
+    [ Markup.button.callback('📌 Temp (Nº)', 'edit_season_num'), Markup.button.callback('🔗 Link Temp.', 'edit_season_url') ],
+    [ Markup.button.callback('🔢 Episódios', 'edit_episodes'), Markup.button.callback('🧩 Nome Temp.', 'edit_season_name') ],
+    [ Markup.button.callback('🔗 Parte', 'edit_part_num') ],
     
     // Padrões
     [ Markup.button.callback('🎥 Estúdio', 'edit_studio'), Markup.button.callback('🎭 Tags', 'edit_tags') ],
