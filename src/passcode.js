@@ -1,5 +1,6 @@
+
 // ARQUIVO: src/passcode.js
-// (CORRIGIDO E OTIMIZADO)
+// (CORRIGIDO: Agora com limpeza REAL e otimização REAL)
 
 const zlib = require('zlib');
 const KEY_MAP = require('./config/passcode_keys.js');
@@ -26,7 +27,7 @@ function decompressUrl(url) {
   return url;
 }
 
-// --- Funções de Minificação (INTELIGENTE) ---
+// --- Funções de Minificação (OTIMIZADA) ---
 function minifyObject(obj) {
   if (Array.isArray(obj)) {
     return obj.map(minifyObject);
@@ -35,19 +36,15 @@ function minifyObject(obj) {
     for (const key in obj) {
       let value = obj[key];
       
-      // --- OTIMIZAÇÃO: LIXEIRA AUTOMÁTICA ---
-      // Se o campo for nulo (ex: 'sinopse' numa Capa), ele é ignorado.
-      // Isso cria um Passcode exclusivo apenas com o que importa.
+      // --- CORREÇÃO 1: REMOVE DADOS INÚTEIS ---
+      // Se o valor for null ou undefined, NÃO salva no código.
       if (value === null || value === undefined) continue;
       // ----------------------------------------
 
       const newKey = KEY_MAP[key] || key;
-      
-      // Comprime URL
       if (key === 'large' || key === 'bannerImage' || key === 'coverImage') {
          if (typeof value === 'string') value = compressUrl(value);
       }
-      
       newObj[newKey] = minifyObject(value);
     }
     return newObj;
@@ -62,7 +59,6 @@ function unminifyObject(obj) {
     for (const key in obj) {
       const originalKey = REVERSE_MAP[key] || key;
       let value = obj[key];
-      
       if (originalKey === 'large' || originalKey === 'bannerImage' || originalKey === 'coverImage') {
          if (typeof value === 'string') value = decompressUrl(value);
       }
@@ -91,10 +87,10 @@ function lerPasscode(passcodeString) {
   try {
     if (!passcodeString) return null;
 
-    // --- CORREÇÃO DE LEITURA (CRÍTICO) ---
-    // Remove espaços, enters e crases que o Telegram adiciona
+    // --- CORREÇÃO 2: LIMPEZA DE QUEBRA DE LINHA ---
+    // Remove espaços, enters e qualquer sujeira que o Telegram adiciona na cópia.
     const limpo = passcodeString.replace(/[^a-zA-Z0-9\-_]/g, '');
-    // -------------------------------------
+    // ---------------------------------------------
     
     const buffer = Buffer.from(limpo, 'base64url');
     const decompressedBuffer = zlib.inflateSync(buffer);
