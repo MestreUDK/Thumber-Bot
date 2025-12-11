@@ -22,9 +22,10 @@ try {
 // Importa nossas funcoes da pasta 'src'
 const { buscarAnime } = require('./src/anilist.js');
 const { carregarFontes } = require('./src/image.js'); 
-const { enviarMenuLayout, enviarMenuFonteDados } = require('./menus/index.js'); 
-// --- *** IMPORTAÇÃO CORRIGIDA *** ---
-const { registerEvents } = require('./src/events/index.js'); // Aponta para a nova pasta
+// --- *** CORREÇÃO AQUI *** ---
+const { enviarMenuLayout, enviarMenuFonteDados } = require('./src/menus/index.js'); 
+// -----------------------------
+const { registerEvents } = require('./src/events/index.js');
 const { checkPermission, allowedIds } = require('./src/security.js');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -44,7 +45,7 @@ bot.start((ctx) => {
   ctx.reply(welcomeMessage);
 });
 
-// --- COMANDO /ajuda ATUALIZADO ---
+// --- COMANDO /ajuda ---
 bot.command('ajuda', (ctx) => {
   const helpMessage = `
 Olá! Aqui está como usar o Thumber Bot:
@@ -76,7 +77,7 @@ O que acontece depois:
 });
 
 
-// --- COMANDO /capa (Gera Imagem) ---
+// --- COMANDO /capa ---
 bot.command('capa', checkPermission, async (ctx) => {
   try {
     const nomeDoAnime = ctx.message.text.replace('/capa', '').trim();
@@ -86,7 +87,7 @@ bot.command('capa', checkPermission, async (ctx) => {
 
     ctx.session.searchTitle = nomeDoAnime; 
     ctx.session.state = 'source_select';
-    ctx.session.isPostMode = false; // <--- Define modo CAPA
+    ctx.session.isPostMode = false; 
     await enviarMenuFonteDados(ctx); 
 
   } catch (err) {
@@ -95,7 +96,7 @@ bot.command('capa', checkPermission, async (ctx) => {
   }
 });
 
-// --- COMANDO /post (Gera Texto) ---
+// --- COMANDO /post ---
 bot.command('post', checkPermission, async (ctx) => {
   try {
     const nomeDoAnime = ctx.message.text.replace('/post', '').trim();
@@ -105,7 +106,7 @@ bot.command('post', checkPermission, async (ctx) => {
 
     ctx.session.searchTitle = nomeDoAnime; 
     ctx.session.state = 'source_select';
-    ctx.session.isPostMode = true; // <--- Define modo POST
+    ctx.session.isPostMode = true; 
     await enviarMenuFonteDados(ctx); 
 
   } catch (err) {
@@ -116,7 +117,6 @@ bot.command('post', checkPermission, async (ctx) => {
 
 // --- COMANDO /passcode ---
 bot.command('passcode', checkPermission, async (ctx) => {
-  // Define o estado para esperar o código
   ctx.session.state = 'awaiting_passcode';
   ctx.reply('🔐 Por favor, envie o seu **Passcode** agora:', { parse_mode: 'Markdown' });
 });
