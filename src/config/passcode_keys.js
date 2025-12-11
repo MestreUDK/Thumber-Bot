@@ -15,11 +15,12 @@ const KEY_MAP = {
   'description': 'desc', 'abrev': 'abr', 'audio': 'aud',
   'seasonNum': 'sn', 'partNum': 'pn', 'seasonName': 'snm',
   
-  // NOVOS CAMPOS MANUAIS (v1.4.5)
-  'yearManual': 'ym',      // Para editar o Ano
-  'seasonManual': 'sm',    // Para editar a Temporada (com link)
-  'typeManual': 'tm',      // Para editar o Tipo (#TV, #Filme)
-  'statusManual': 'stm'    // Para editar o Status
+  // Campos Manuais e URL
+  'yearManual': 'ym', 
+  'seasonManual': 'sm',
+  'typeManual': 'tm', 
+  'statusManual': 'stm',
+  'seasonUrl': 'surl' // <-- NOVO: URL da Temporada
 };
 
 module.exports = KEY_MAP;
