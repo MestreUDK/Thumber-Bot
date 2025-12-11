@@ -1,6 +1,7 @@
 // ARQUIVO: src/config/passcode_keys.js
+
 const KEY_MAP = {
-  // Controle
+  // Controle Interno
   'mode': 'm',
 
   // Campos Básicos
@@ -20,7 +21,7 @@ const KEY_MAP = {
   'seasonManual': 'sm',
   'typeManual': 'tm', 
   'statusManual': 'stm',
-  'seasonUrl': 'surl' // <-- NOVO: URL da Temporada
+  'seasonUrl': 'surl'
 };
 
 module.exports = KEY_MAP;
