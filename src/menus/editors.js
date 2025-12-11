@@ -76,42 +76,40 @@ Classificação: ${classificacao}
 }
 
 // --- *** NOVO: Menu Exclusivo para POST (Texto) *** ---
+// Atualizado com todos os botões de edição solicitados
 async function enviarMenuEdicaoPost(ctx) {
   const data = ctx.session.animeData;
   if (!data) return ctx.reply('Sessão expirada. Use /post novamente.');
 
   const titulo = (data.title && data.title.romaji) || "N/A";
-  const abrev = data.abrev || "(Vazio)";
-  const audio = data.audio || "Leg/Dub";
-  const seasonNum = data.seasonNum || "1";
-  const eps = data.episodes || "?";
   
   const texto = `
-📝 **Editor de Post (Texto)**
+📝 **Editor de Post**
+Editando: ${titulo}
 
-` + "```" + `
-Título: ${titulo}
-Abrev: ${abrev}
-Áudio: ${audio}
-Temp: ${seasonNum} | Eps: ${eps}
-` + "```" + `
+Escolha o campo para alterar:
 `;
 
   const botoes = Markup.inlineKeyboard([
-    [ Markup.button.callback('✅ Gerar Post', 'generate_final') ],
-    // Linha 1: Dados principais
-    [ Markup.button.callback('🏷️ Título', 'edit_title'), Markup.button.callback('🏮 Abrev.', 'edit_abrev') ],
-    // Linha 2: Detalhes técnicos
-    [ Markup.button.callback('🎧 Áudio', 'edit_audio'), Markup.button.callback('ℹ️ Sinopse', 'edit_synopsis') ],
-    // Linha 3: Dados da Temporada
-    [ Markup.button.callback('📌 Temp. (Nº)', 'edit_season_num'), Markup.button.callback('🔢 Episódios', 'edit_episodes') ],
-    // Linha 4: Mais dados de Temporada
+    [ Markup.button.callback('✅ Gerar Post Final', 'generate_final') ],
+    
+    // Identificação
+    [ Markup.button.callback('🏷️ Título', 'edit_title'), Markup.button.callback('🔤 Alt. Nome', 'edit_alt_name') ],
+    [ Markup.button.callback('🏮 Abrev.', 'edit_abrev'), Markup.button.callback('🎧 Áudio', 'edit_audio') ],
+    
+    // Dados Técnicos (Novos)
+    [ Markup.button.callback('🗓️ Ano', 'edit_year'), Markup.button.callback('💈 Temporada (Link)', 'edit_season') ],
+    [ Markup.button.callback('📺 Tipo', 'edit_type'), Markup.button.callback('🆙 Status', 'edit_status') ],
+    
+    // Dados da Obra
+    [ Markup.button.callback('📌 Temp (Nº)', 'edit_season_num'), Markup.button.callback('🔢 Episódios', 'edit_episodes') ],
     [ Markup.button.callback('🔗 Parte', 'edit_part_num'), Markup.button.callback('🧩 Nome Temp.', 'edit_season_name') ],
-    // Linha 5: Padrões
+    
+    // Padrões
     [ Markup.button.callback('🎥 Estúdio', 'edit_studio'), Markup.button.callback('🎭 Tags', 'edit_tags') ],
-    // Linha 6: Classificação
-    [ Markup.button.callback('🚦 Classificação', 'edit_rating') ],
-    // Linha 7: Controle (Pôster é opcional no post, deixamos aqui caso queira trocar a imagem enviada junto)
+    [ Markup.button.callback('🚦 Classificação', 'edit_rating'), Markup.button.callback('ℹ️ Sinopse', 'edit_synopsis') ],
+    
+    // Controle
     [ Markup.button.callback('🖼️ Pôster (Opcional)', 'edit_poster'), Markup.button.callback('❌ Cancelar', 'cancel_edit') ]
   ]);
 
@@ -122,5 +120,5 @@ Temp: ${seasonNum} | Eps: ${eps}
 module.exports = { 
     enviarMenuEdicao: enviarMenuEdicaoCompleto, 
     enviarMenuEdicaoFilme,
-    enviarMenuEdicaoPost // <-- Exportando o novo menu
+    enviarMenuEdicaoPost 
 };
