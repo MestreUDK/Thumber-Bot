@@ -1,7 +1,7 @@
 // ARQUIVO: src/config/passcode_keys.js
 const KEY_MAP = {
-  // Controle Interno
-  'mode': 'm', // <-- NOVO: 'p' (post) ou 'c' (capa)
+  // Controle
+  'mode': 'm',
 
   // Campos Básicos
   'title': 't', 'romaji': 'r', 'english': 'e',
@@ -12,10 +12,14 @@ const KEY_MAP = {
   'classificacaoManual': 'cm', 'infoManual': 'im', 'layout': 'la',
   
   // Campos do Post
-  'description': 'desc', 'status': 'stat',
-  'startDate': 'sd', 'endDate': 'ed', 'year': 'yr',
-  'abrev': 'abr', 'audio': 'aud', 'seasonNum': 'sn',
-  'partNum': 'pn', 'seasonName': 'snm'
+  'description': 'desc', 'abrev': 'abr', 'audio': 'aud',
+  'seasonNum': 'sn', 'partNum': 'pn', 'seasonName': 'snm',
+  
+  // NOVOS CAMPOS MANUAIS (v1.4.5)
+  'yearManual': 'ym',      // Para editar o Ano
+  'seasonManual': 'sm',    // Para editar a Temporada (com link)
+  'typeManual': 'tm',      // Para editar o Tipo (#TV, #Filme)
+  'statusManual': 'stm'    // Para editar o Status
 };
 
 module.exports = KEY_MAP;
