@@ -1,4 +1,5 @@
 // ARQUIVO: src/events/editors.js
+// (ATUALIZADO: Detecção inteligente de modo no Passcode)
 
 const { enviarMenuClassificacao } = require('../menus/index.js');
 const { lerPasscode } = require('../passcode.js');
@@ -64,14 +65,26 @@ module.exports = (bot, checkPermission) => {
         ctx.session.animeData = dados;
         ctx.session.state = 'main_edit';
         
-        // Detecção de modo
-        if (dados.description || dados.abrev || dados.seasonName) {
+        // --- *** MELHORIA AQUI: Detecção Precisa *** ---
+        // Verifica o campo 'mode' (salvo como 'm' no passcode)
+        if (dados.mode === 'p') {
              ctx.session.isPostMode = true;
-             await ctx.reply('✅ Dados de **POST** restaurados.');
-        } else {
+             await ctx.reply('✅ Dados de **POST** identificados e restaurados.');
+        } else if (dados.mode === 'c') {
              ctx.session.isPostMode = false;
-             await ctx.reply('✅ Dados de **CAPA** restaurados.');
+             await ctx.reply('✅ Dados de **CAPA** identificados e restaurados.');
+        } else {
+             // Fallback para códigos antigos (sem o campo mode)
+             if (dados.description || dados.abrev || dados.seasonName) {
+                 ctx.session.isPostMode = true;
+                 await ctx.reply('⚠️ Passcode antigo: Detectado como **POST**.');
+             } else {
+                 ctx.session.isPostMode = false;
+                 await ctx.reply('⚠️ Passcode antigo: Detectado como **CAPA**.');
+             }
         }
+        // ----------------------------------------------
+        
         return await irParaMenuEdicao(ctx);
     }
 
