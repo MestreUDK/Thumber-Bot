@@ -1,4 +1,5 @@
 // ARQUIVO: src/events/editors.js
+// ATUALIZADO (v1.5.0 - Roadmap Etapa 1: Mostrar valor atual ao editar)
 
 const { enviarMenuClassificacao } = require('../menus/index.js');
 const { lerPasscode } = require('../passcode.js');
@@ -15,50 +16,91 @@ module.exports = (bot, checkPermission) => {
       'edit_season_num', 'edit_episodes', 'edit_part_num', 'edit_season_name',
       // Novos Campos Manuais (v1.4.5+)
       'edit_alt_name', 'edit_year', 'edit_season', 'edit_type', 'edit_status',
-      'edit_season_url' // <-- O Novo botão de Link
+      'edit_season_url'
   ];
 
-  // --- HANDLER DOS BOTÕES ---
+  // --- HANDLER DOS BOTÕES (AGORA MOSTRA O VALOR ATUAL) ---
   bot.action(botoesEdicao, checkPermission, async (ctx) => {
     if (!ctx.session || ctx.session.state !== 'main_edit') return ctx.answerCbQuery();
+    
     const acao = ctx.match[0];
+    const dados = ctx.session.animeData; // Pega os dados salvos na sessão
+    
     ctx.session.state = 'awaiting_input'; 
     ctx.session.awaitingInput = acao; 
     
-    let pergunta = 'Digite o novo valor:';
-    
-    // --- Perguntas Personalizadas ---
-    
+    // 1. Lógica para descobrir qual valor mostrar baseado no botão clicado
+    let valorAtual = "Vazio / Não definido";
+    let nomeCampo = "Valor";
+
+    // --- Mapeamento Inteligente ---
     // Identificação
-    if(acao === 'edit_title') pergunta = 'Digite o novo **Título**:';
-    if(acao === 'edit_alt_name') pergunta = 'Digite o **Nome Alternativo** (Ex: Attack on Titan):';
-    if(acao === 'edit_info') pergunta = 'Digite a nova **Info** (Topo):';
-    if(acao === 'edit_abrev') pergunta = 'Digite a **Abreviação** (Ex: #Fumetsu):';
+    if(acao === 'edit_title') {
+        nomeCampo = "Título Principal";
+        valorAtual = dados.title.romaji;
+    }
+    else if(acao === 'edit_alt_name') {
+        nomeCampo = "Nome Alternativo";
+        valorAtual = dados.title.english;
+    }
+    else if(acao === 'edit_info') {
+        nomeCampo = "Info (Topo)";
+        valorAtual = dados.infoManual;
+    }
+    else if(acao === 'edit_abrev') {
+        nomeCampo = "Abreviação";
+        valorAtual = dados.abrev;
+    }
+    
+    // Padrões (Estúdio e Tags precisam de tratamento especial pois são objetos/arrays)
+    else if(acao === 'edit_studio') {
+        nomeCampo = "Estúdio";
+        valorAtual = (dados.studios && dados.studios.nodes[0]) ? dados.studios.nodes[0].name : null;
+    }
+    else if(acao === 'edit_tags') {
+        nomeCampo = "Tags";
+        valorAtual = (dados.genres) ? dados.genres.join(', ') : null;
+    }
     
     // Dados Técnicos
-    if(acao === 'edit_year') pergunta = 'Digite o **Ano** (Ex: 2024 ou 2023 à 2024):';
-    if(acao === 'edit_season') pergunta = 'Digite a **Temporada** (Texto Visual, ex: Outono 2024):';
-    if(acao === 'edit_season_url') pergunta = 'Envie o **Link (URL)** para a Temporada (Ex: https://t.me/...):';
-    if(acao === 'edit_type') pergunta = 'Digite o **Tipo** (Ex: #TV ou #Filme):';
-    if(acao === 'edit_status') pergunta = 'Digite o **Status** (Ex: Completo):';
-    if(acao === 'edit_audio') pergunta = 'Digite o **Áudio** (Ex: #legendado | #dublado):';
+    else if(acao === 'edit_year') { nomeCampo = "Ano"; valorAtual = dados.yearManual; }
+    else if(acao === 'edit_season') { nomeCampo = "Temporada (Texto)"; valorAtual = dados.seasonManual; }
+    else if(acao === 'edit_season_url') { nomeCampo = "Link da Temporada"; valorAtual = dados.seasonUrl; }
+    else if(acao === 'edit_type') { nomeCampo = "Tipo"; valorAtual = dados.typeManual; }
+    else if(acao === 'edit_status') { nomeCampo = "Status"; valorAtual = dados.statusManual; }
+    else if(acao === 'edit_audio') { nomeCampo = "Áudio"; valorAtual = dados.audio; }
     
     // Dados da Obra
-    if(acao === 'edit_season_num') pergunta = 'Digite o **Número da Temporada** (Ex: 2):';
-    if(acao === 'edit_episodes') pergunta = 'Digite a **Quantidade de Episódios**:';
-    if(acao === 'edit_part_num') pergunta = 'Digite o **Número da Parte** (Ex: 1):';
-    if(acao === 'edit_season_name') pergunta = 'Digite o **Nome da Temporada** (Ex: Arc de Shibuya):';
-    if(acao === 'edit_synopsis') pergunta = 'Digite a **Sinopse**:';
+    else if(acao === 'edit_season_num') { nomeCampo = "Nº Temporada"; valorAtual = dados.seasonNum; }
+    else if(acao === 'edit_episodes') { nomeCampo = "Qtd Episódios"; valorAtual = dados.episodes; }
+    else if(acao === 'edit_part_num') { nomeCampo = "Nº Parte"; valorAtual = dados.partNum; }
+    else if(acao === 'edit_season_name') { nomeCampo = "Nome da Temporada"; valorAtual = dados.seasonName; }
+    else if(acao === 'edit_synopsis') { nomeCampo = "Sinopse"; valorAtual = dados.description; }
 
-    // Padrões
-    if(acao === 'edit_studio') pergunta = 'Digite o novo **Estúdio**:';
-    if(acao === 'edit_tags') pergunta = 'Digite as **Tags** (separadas por vírgula):';
+    // Imagens (Mostra a URL)
+    else if(acao === 'edit_poster') { nomeCampo = "URL do Pôster"; valorAtual = dados.coverImage?.large; }
+    else if(acao === 'edit_fundo') { nomeCampo = "URL do Banner"; valorAtual = dados.bannerImage; }
 
-    // Imagens
-    if(acao === 'edit_poster') pergunta = 'Envie a imagem ou link do **Pôster**:';
-    if(acao === 'edit_fundo') pergunta = 'Envie a imagem ou link do **Fundo**:';
+    // Tratamento estético para nulos
+    if (!valorAtual) valorAtual = "_(Vazio)_";
 
-    await ctx.reply(pergunta, { parse_mode: 'Markdown' });
+    // 2. Monta a mensagem visual
+    const mensagem = `
+✏️ **Editando: ${nomeCampo}**
+
+Valor Atual:
+\`${valorAtual}\`
+
+👇 **Digite o novo valor abaixo:**
+_(Ou envie /cancelar para não alterar)_
+`;
+
+    // Se for Sinopse (texto grande), enviamos sem bloco de código para facilitar a leitura
+    if (acao === 'edit_synopsis') {
+         await ctx.reply(`✏️ **Editando Sinopse**\n\n**Atual:**\n${valorAtual}\n\n👇 Digite a nova sinopse:`, { parse_mode: 'Markdown' });
+    } else {
+         await ctx.reply(mensagem, { parse_mode: 'Markdown' });
+    }
   });
 
   // --- BOTÃO DE RATING ---
@@ -70,23 +112,33 @@ module.exports = (bot, checkPermission) => {
   // --- RECEBIMENTO DE TEXTO ---
   bot.on('text', checkPermission, async (ctx) => {
     if (ctx.message.text.startsWith('/')) return;
+    
+    // Comando de cancelar edição
+    if (ctx.session.state === 'awaiting_input' && ctx.message.text.trim().toLowerCase() === '/cancelar') {
+        ctx.session.state = 'main_edit';
+        ctx.session.awaitingInput = null;
+        await ctx.reply('Operação cancelada.');
+        return await irParaMenuEdicao(ctx);
+    }
 
-    // 1. RESTAURAR PASSCODE
+    // 1. RESTAURAR PASSCODE (Mantendo a limpeza do v1.4.9)
     if (ctx.session.state === 'awaiting_passcode') {
-        const codigo = ctx.message.text.trim();
+        const codigoRaw = ctx.message.text;
+        // Limpeza de caracteres invisíveis/quebras de linha do Telegram
+        const codigo = codigoRaw.replace(/[^a-zA-Z0-9\-_]/g, '');
+        
         const dados = lerPasscode(codigo);
-        if (!dados) return ctx.reply('❌ Código inválido.');
+        if (!dados) return ctx.reply('❌ Código inválido ou corrompido.');
         
         ctx.session.animeData = dados;
         ctx.session.state = 'main_edit';
         
-        // Detecção de modo (Post vs Capa)
         if (dados.mode === 'p') {
              ctx.session.isPostMode = true;
-             await ctx.reply('✅ Dados de **POST** identificados e restaurados.');
+             await ctx.reply('✅ Dados de **POST** restaurados.');
         } else if (dados.mode === 'c') {
              ctx.session.isPostMode = false;
-             await ctx.reply('✅ Dados de **CAPA** identificados e restaurados.');
+             await ctx.reply('✅ Dados de **CAPA** restaurados.');
         } else {
              // Fallback para códigos antigos
              if (dados.description || dados.abrev) {
@@ -100,19 +152,19 @@ module.exports = (bot, checkPermission) => {
         return await irParaMenuEdicao(ctx);
     }
 
-    // 2. EDIÇÃO DE CAMPOS
+    // 2. EDIÇÃO DE CAMPOS (Salvar o novo valor)
     if (ctx.session.state !== 'awaiting_input' || !ctx.session.animeData) return;
     const state = ctx.session.awaitingInput;
     const anime = ctx.session.animeData;
     const input = ctx.message.text.trim();
 
-    // --- Mapeamento Geral ---
+    // Mapeamento Geral
     if (state === 'edit_title') anime.title.romaji = input;
     if (state === 'edit_info') anime.infoManual = input;
     if (state === 'edit_studio') anime.studios.nodes = [{ name: input }];
     if (state === 'edit_tags') anime.genres = input.split(',').map(t => t.trim());
     
-    // --- Campos Específicos do Post ---
+    // Post
     if (state === 'edit_abrev') anime.abrev = input;
     if (state === 'edit_audio') anime.audio = input;
     if (state === 'edit_synopsis') anime.description = input;
@@ -121,15 +173,15 @@ module.exports = (bot, checkPermission) => {
     if (state === 'edit_part_num') anime.partNum = input;
     if (state === 'edit_season_name') anime.seasonName = input;
 
-    // --- Novos Campos Manuais ---
+    // Manuais e Link
     if (state === 'edit_alt_name') anime.title.english = input;
     if (state === 'edit_year') anime.yearManual = input;
     if (state === 'edit_type') anime.typeManual = input;
     if (state === 'edit_status') anime.statusManual = input;
-    if (state === 'edit_season') anime.seasonManual = input; // Texto da temporada
-    if (state === 'edit_season_url') anime.seasonUrl = input; // Link da temporada
+    if (state === 'edit_season') anime.seasonManual = input;
+    if (state === 'edit_season_url') anime.seasonUrl = input;
 
-    // --- Imagens via Link ---
+    // Imagens
     if (state === 'edit_poster') {
         if (!anime.coverImage) anime.coverImage = {};
         anime.coverImage.large = input;
@@ -142,7 +194,7 @@ module.exports = (bot, checkPermission) => {
     await irParaMenuEdicao(ctx);
   });
 
-  // --- RECEBIMENTO DE FOTOS (UPLOAD) ---
+  // FOTOS (Mantido igual)
   bot.on('photo', checkPermission, async (ctx) => {
       if (ctx.session.state !== 'awaiting_input') return;
       const state = ctx.session.awaitingInput;
