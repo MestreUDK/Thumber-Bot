@@ -183,6 +183,10 @@
     "text": "ESGRIMA",
     "color": "tag_azul.png"
   },
+  "SAMURAI": {
+    "text": "SAMURAI",
+    "color": "tag_vermelho.png"
+  },
   "AWARD WINNING": {
     "text": "PREMIADO",
     "color": "tag_amarelo.png"
