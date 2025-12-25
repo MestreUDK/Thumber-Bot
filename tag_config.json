@@ -71,6 +71,14 @@
     "text": "ISEKAI",
     "color": "tag_verde.png"
   },
+  "REINCARNATION": {
+    "text": "REENCARNAÇÃO",
+    "color": "tag_verde.png"
+  },
+  "TENSEI": {
+    "text": "TENSEI",
+    "color": "tag_verde.png"
+  },
   "MUSIC": {
     "text": "MÚSICA",
     "color": "tag_amarelo.png"
