@@ -51,6 +51,10 @@
     "text": "ROMANCE",
     "color": "tag_roxo.png"
   },
+  "VILLAINESS": {
+    "text": "VILÃ",
+    "color": "tag_vinho.png"
+  },
   "SCI-FI": {
     "text": "SCI-FI",
     "color": "tag_azul.png"
