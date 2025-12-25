@@ -55,6 +55,14 @@
     "text": "ROMANCE",
     "color": "tag_roxo.png"
   },
+  "LOVE POLYGON": {
+    "text": "POLIAMOR",
+    "color": "tag_roxo.png"
+  },
+  "CROSSDRESSING": {
+    "text": "DISFARCE",
+    "color": "tag_amarelo.png"
+  },
   "VILLAINESS": {
     "text": "VILÃ",
     "color": "tag_vinho.png"
