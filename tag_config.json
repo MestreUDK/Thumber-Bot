@@ -11,6 +11,10 @@
     "text": "AVENTURA",
     "color": "tag_vermelho.png"
   },
+  "ORGANIZED CRIME": {
+    "text": "GANGUE",
+    "color": "tag_vermelho.png"
+  },
   "COMEDY": {
     "text": "COMÉDIA",
     "color": "tag_laranja.png"
@@ -65,6 +69,10 @@
   },
   "SPORTS": {
     "text": "ESPORTE",
+    "color": "tag_azul.png"
+  },
+  "SHOWBIZ": {
+    "text": "SHOWBIZ",
     "color": "tag_azul.png"
   },
   "SLICE OF LIFE": {
