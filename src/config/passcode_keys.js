@@ -1,7 +1,7 @@
 // ARQUIVO: src/config/passcode_keys.js
 
 const KEY_MAP = {
-  // Controle Interno (Obrigatório para separar Post de Capa)
+  // Controle
   'mode': 'm', 
 
   // Campos Básicos
@@ -16,7 +16,8 @@ const KEY_MAP = {
   'description': 'desc', 'abrev': 'abr', 'audio': 'aud',
   'seasonNum': 'sn', 'partNum': 'pn', 'seasonName': 'snm',
   
-  // Campos Manuais e URL
+  // Novos Campos (v1.5)
+  'origem': 'org',        // <-- NOVO: Origem (Mangá, Novel...)
   'yearManual': 'ym', 
   'seasonManual': 'sm',
   'typeManual': 'tm', 
