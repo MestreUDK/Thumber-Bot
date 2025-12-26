@@ -16,21 +16,31 @@ try {
 function formatarPost(anime) {
   const dados = {};
   
-  // Campos Básicos
+  // 1. Cabeçalho
   dados.titulo = anime.title.romaji || "Desconhecido";
-  dados.alternativo = anime.title.english ? `(${anime.title.english})` : "";
-  dados.abrev = anime.abrev || "{_Abrev_}";
+  dados.alternativo = anime.title.english ? ` (${anime.title.english})` : ""; // Espaço antes do parentese
   
-  // --- TAGS (Separadas por vírgula) ---
-  dados.tags = (anime.genres || []).map(tag => {
+  // Linha Condicional: Abreviação (Com chaves {} e ícone)
+  if (anime.abrev) {
+      dados.linhaAbrev = `🏮 | {${anime.abrev}}`;
+  } else {
+      dados.linhaAbrev = ""; // Se vazio, a linha some
+  }
+  
+  // 2. Tags (Ordenadas A-Z e traduzidas)
+  let tagsList = (anime.genres || []).map(tag => {
       const upper = tag.toUpperCase().trim();
       const translated = (tagConfig[upper] && tagConfig[upper].text) ? tagConfig[upper].text : tag;
-      return `#${translated.replace(/\s+/g, '_')}`;
-  }).join(', '); // <--- ALTERADO AQUI PARA VÍRGULA
+      return `#${translated.replace(/\s+/g, '_')}`; // Adiciona # e remove espaços
+  });
   
-  dados.audio = anime.audio || "#legendado | #dublado"; 
+  // Ordenação Alfabética
+  tagsList.sort((a, b) => a.localeCompare(b));
+  dados.tags = tagsList.join(', ');
   
-  // Ano e Status
+  dados.audio = anime.audio || "#legendado"; 
+  
+  // 3. Dados Técnicos
   if (anime.yearManual) {
       dados.ano = anime.yearManual;
   } else {
@@ -38,13 +48,22 @@ function formatarPost(anime) {
       const anoFim = anime.endDate && anime.endDate.year ? anime.endDate.year : "";
       dados.ano = anoFim ? `${anoInicio} à ${anoFim}` : `${anoInicio}`;
   }
+  
+  dados.origem = anime.origem || "Outro"; // Novo Campo
 
-  // Temporada (Texto Visual: Primavera 2024)
   if (anime.seasonManual) {
-      dados.temporada = anime.seasonManual; 
+      dados.temporada = anime.seasonManual;
   } else {
       dados.temporada = anime.season ? `#${traduzirTemporada(anime.season).toLowerCase()}` : "#indefinida";
   }
+  
+  dados.estudio = (anime.studios && anime.studios.nodes.length > 0) 
+    ? `#${anime.studios.nodes[0].name.replace(/\s+/g, '')}` : "#Desconhecido";
+    
+  const rawRating = anime.classificacaoManual || "Indefinida";
+  dados.classificacao = formatarClassificacaoTxt(rawRating);
+
+  dados.tipo = anime.typeManual || (anime.format ? `#${anime.format}` : "#TV");
   
   // Status
   if (anime.statusManual) dados.status = anime.statusManual;
@@ -56,39 +75,45 @@ function formatarPost(anime) {
       dados.status = st;
   }
   
-  dados.estudio = (anime.studios && anime.studios.nodes.length > 0) 
-    ? `#${anime.studios.nodes[0].name.replace(/\s+/g, '')}` : "#Desconhecido";
-    
-  // Classificação (Nova Lógica)
-  const rawRating = anime.classificacaoManual || "Indefinida";
-  dados.classificacao = formatarClassificacaoTxt(rawRating);
-
-  // Tipo
-  if (anime.typeManual) dados.tipo = anime.typeManual;
-  else dados.tipo = anime.format ? `#${anime.format}` : "#TV";
-  
-  // --- TEMPORADA NUMÉRICA (COM HYPERLINK) ---
-  const num = anime.seasonNum || "1";
-  // Se tiver URL salva, cria o link: [Temporada 1](https://...)
+  // 4. Temporada e Links
+  const num = anime.seasonNum || "1ª Temporada";
+  // Link no formato Markdown: [Texto](URL)
   if (anime.seasonUrl) {
-      dados.numTemporada = `[Temporada ${num}](${anime.seasonUrl})`;
+      dados.linkTemporada = `[${num}](${anime.seasonUrl})`;
   } else {
-      dados.numTemporada = `Temporada ${num}`;
+      dados.linkTemporada = num;
   }
-
   dados.episodios = anime.episodes || "?";
-  dados.parte = anime.partNum || "1";
-  dados.nomeTemporada = anime.seasonName || "Nome da temporada";
+
+  // Linhas Condicionais: Parte e Nome Temp
+  if (anime.partNum) {
+      dados.linhaParte = `🔗 | Parte ${anime.partNum}`;
+  } else {
+      dados.linhaParte = "";
+  }
   
-  // Sinopse
+  if (anime.seasonName) {
+      dados.linhaNomeTemp = `🧩 | ${anime.seasonName}`;
+  } else {
+      dados.linhaNomeTemp = "";
+  }
+  
+  // 5. Sinopse
   let sin = anime.description || "Sinopse indisponível.";
   sin = sin.replace(/<br>/g, "\n").replace(/<i>/g, "").replace(/<\/i>/g, "");
   dados.sinopse = sin;
 
-  // Substituição
+  // 6. Substituição no Template
   let textoFinal = POST_TEMPLATE;
   for (const [chave, valor] of Object.entries(dados)) {
-      textoFinal = textoFinal.split(`{{${chave}}}`).join(valor);
+      // Remove a linha inteira do template se o valor for vazio (para as linhas condicionais)
+      if (valor === "") {
+          // Regex para remover a linha que contém {{chave}} vazia e a quebra de linha seguinte
+          const regex = new RegExp(`^.*{{${chave}}}.*(\\r\\n|\\n|\\r)?`, "gm");
+          textoFinal = textoFinal.replace(regex, "");
+      } else {
+          textoFinal = textoFinal.split(`{{${chave}}}`).join(valor);
+      }
   }
   
   return textoFinal.trim();
