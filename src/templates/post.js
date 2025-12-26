@@ -13,6 +13,22 @@ try {
   POST_TEMPLATE = fs.readFileSync(path.join(__dirname, '..', '..', 'assets', 'templates', 'post.txt'), 'utf-8');
 } catch (e) { POST_TEMPLATE = "ERRO: Template não encontrado."; }
 
+// --- Função auxiliar para formatar datas (dd/mm/yyyy) ---
+function formatarDataAniList(dateObj) {
+    if (!dateObj || !dateObj.year) return null;
+    
+    // Se tiver dia e mês, formata bonito: 25/12/2025
+    if (dateObj.day && dateObj.month) {
+        const dia = String(dateObj.day).padStart(2, '0');
+        const mes = String(dateObj.month).padStart(2, '0');
+        return `${dia}/${mes}/${dateObj.year}`;
+    }
+    
+    // Se faltar dados, retorna só o ano
+    return `${dateObj.year}`;
+}
+// --------------------------------------------------------
+
 function formatarPost(anime) {
   const dados = {};
   
@@ -22,27 +38,38 @@ function formatarPost(anime) {
   // Alternativo: Se vazio, fica vazio (mas NÃO apaga a linha do título)
   dados.alternativo = anime.title.english ? ` (${anime.title.english})` : ""; 
   
-  // Linha Condicional: Abreviação (Essa sim, se vazia, some a linha)
+  // Linha Condicional: Abreviação (Se vazia, apaga a linha no final)
   dados.linhaAbrev = anime.abrev ? `🏮 | {${anime.abrev}}` : "";
   
-  // 2. Tags
+  // 2. Tags (Ordenadas A-Z e MINÚSCULAS)
   let tagsList = (anime.genres || []).map(tag => {
       const upper = tag.toUpperCase().trim();
       const translated = (tagConfig[upper] && tagConfig[upper].text) ? tagConfig[upper].text : tag;
-      return `#${translated.replace(/\s+/g, '_')}`;
+      
+      // Força minúsculo (.toLowerCase) e substitui espaços por _
+      return `#${translated.toLowerCase().replace(/\s+/g, '_')}`;
   });
+  
   tagsList.sort((a, b) => a.localeCompare(b));
   dados.tags = tagsList.length > 0 ? tagsList.join(', ') : "??";
   
   dados.audio = anime.audio || "??"; 
   
-  // 3. Dados Técnicos
+  // 3. Dados Técnicos (Datas Completas)
   if (anime.yearManual) {
       dados.ano = anime.yearManual;
   } else {
-      const anoInicio = anime.startDate && anime.startDate.year ? anime.startDate.year : "??";
-      const anoFim = anime.endDate && anime.endDate.year ? anime.endDate.year : "";
-      dados.ano = anoFim ? `${anoInicio} à ${anoFim}` : `${anoInicio}`;
+      const inicioStr = formatarDataAniList(anime.startDate);
+      const fimStr = formatarDataAniList(anime.endDate);
+      
+      if (!inicioStr) {
+          dados.ano = "??";
+      } else if (fimStr) {
+          dados.ano = `${inicioStr} à ${fimStr}`;
+      } else {
+          // Se não tem fim (e não está lançando), ou é filme/ova de um dia só
+          dados.ano = inicioStr;
+      }
   }
   
   dados.origem = anime.origem || "??";
@@ -57,7 +84,6 @@ function formatarPost(anime) {
     ? `#${anime.studios.nodes[0].name.replace(/\s+/g, '')}` : "??";
     
   const rawRating = anime.classificacaoManual || null;
-  // A função formatarClassificacaoTxt no utils já foi ajustada ou retornará "??" se nulo
   dados.classificacao = formatarClassificacaoTxt(rawRating);
 
   dados.tipo = anime.typeManual || (anime.format ? `#${anime.format}` : "??");
