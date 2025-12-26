@@ -21,6 +21,7 @@ Um bot robusto para Telegram focado em gerar capas (thumbnails) personalizadas p
     * Os **textos** (título, info) são alinhados à direita, encostados no pôster.
     * As **tags** fluem dinamicamente entre duas linhas com bordas arredondadas.
     * O **Estúdio** se posiciona condicionalmente para otimizar o espaço.
+    * Permite também criar posts.
 * **Segurança:** O bot é protegido por um sistema de "whitelist", permitindo o uso apenas por IDs autorizados definidos no `.env`.
 
 ## 🚀 Como Usar
@@ -31,7 +32,7 @@ Um bot robusto para Telegram focado em gerar capas (thumbnails) personalizadas p
 2.  **`/ajuda`**
     Mostra um guia rápido e a versão atual do bot.
 
-3.  **`/capa [Nome do Anime]`**
+3.  **`/capa [Nome do Anime] ou /post [Nome do Anime]`**
     Inicia o fluxo de geração.
     * **Exemplo:** `/capa To Your Eternity`
     

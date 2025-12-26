@@ -11,6 +11,10 @@
     "text": "AVENTURA",
     "color": "tag_vermelho.png"
   },
+  "ORGANIZED CRIME": {
+    "text": "GANGUE",
+    "color": "tag_vermelho.png"
+  },
   "COMEDY": {
     "text": "COMÉDIA",
     "color": "tag_laranja.png"
@@ -51,6 +55,22 @@
     "text": "ROMANCE",
     "color": "tag_roxo.png"
   },
+  "LOVE POLYGON": {
+    "text": "POLIAMOR",
+    "color": "tag_roxo.png"
+  },
+  "IDOL": {
+    "text": "IDOL",
+    "color": "tag_roxo.png"
+  },
+  "CROSSDRESSING": {
+    "text": "DISFARCE",
+    "color": "tag_amarelo.png"
+  },
+  "VILLAINESS": {
+    "text": "VILÃ",
+    "color": "tag_vinho.png"
+  },
   "SCI-FI": {
     "text": "SCI-FI",
     "color": "tag_azul.png"
@@ -63,12 +83,24 @@
     "text": "ESPORTE",
     "color": "tag_azul.png"
   },
+  "SHOWBIZ": {
+    "text": "SHOWBIZ",
+    "color": "tag_azul.png"
+  },
   "SLICE OF LIFE": {
     "text": "SLICE OF LIFE",
     "color": "tag_verde.png"
   },
   "ISEKAI": {
     "text": "ISEKAI",
+    "color": "tag_verde.png"
+  },
+  "REINCARNATION": {
+    "text": "REENCARNAÇÃO",
+    "color": "tag_verde.png"
+  },
+  "TENSEI": {
+    "text": "TENSEI",
     "color": "tag_verde.png"
   },
   "MUSIC": {
@@ -150,6 +182,10 @@
   "ESGRIMA": {
     "text": "ESGRIMA",
     "color": "tag_azul.png"
+  },
+  "SAMURAI": {
+    "text": "SAMURAI",
+    "color": "tag_vermelho.png"
   },
   "AWARD WINNING": {
     "text": "PREMIADO",
