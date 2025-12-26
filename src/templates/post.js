@@ -17,58 +17,55 @@ function formatarPost(anime) {
   const dados = {};
   
   // 1. Cabeçalho
-  dados.titulo = anime.title.romaji || "Desconhecido";
-  dados.alternativo = anime.title.english ? ` (${anime.title.english})` : ""; // Espaço antes do parentese
+  dados.titulo = anime.title.romaji || "??";
   
-  // Linha Condicional: Abreviação (Com chaves {} e ícone)
-  if (anime.abrev) {
-      dados.linhaAbrev = `🏮 | {${anime.abrev}}`;
-  } else {
-      dados.linhaAbrev = ""; // Se vazio, a linha some
-  }
+  // Alternativo: Se vazio, fica vazio (mas NÃO apaga a linha do título)
+  dados.alternativo = anime.title.english ? ` (${anime.title.english})` : ""; 
   
-  // 2. Tags (Ordenadas A-Z e traduzidas)
+  // Linha Condicional: Abreviação (Essa sim, se vazia, some a linha)
+  dados.linhaAbrev = anime.abrev ? `🏮 | {${anime.abrev}}` : "";
+  
+  // 2. Tags
   let tagsList = (anime.genres || []).map(tag => {
       const upper = tag.toUpperCase().trim();
       const translated = (tagConfig[upper] && tagConfig[upper].text) ? tagConfig[upper].text : tag;
-      return `#${translated.replace(/\s+/g, '_')}`; // Adiciona # e remove espaços
+      return `#${translated.replace(/\s+/g, '_')}`;
   });
-  
-  // Ordenação Alfabética
   tagsList.sort((a, b) => a.localeCompare(b));
-  dados.tags = tagsList.join(', ');
+  dados.tags = tagsList.length > 0 ? tagsList.join(', ') : "??";
   
-  dados.audio = anime.audio || "#legendado"; 
+  dados.audio = anime.audio || "??"; 
   
   // 3. Dados Técnicos
   if (anime.yearManual) {
       dados.ano = anime.yearManual;
   } else {
-      const anoInicio = anime.startDate && anime.startDate.year ? anime.startDate.year : "????";
+      const anoInicio = anime.startDate && anime.startDate.year ? anime.startDate.year : "??";
       const anoFim = anime.endDate && anime.endDate.year ? anime.endDate.year : "";
       dados.ano = anoFim ? `${anoInicio} à ${anoFim}` : `${anoInicio}`;
   }
   
-  dados.origem = anime.origem || "Outro"; // Novo Campo
+  dados.origem = anime.origem || "??";
 
   if (anime.seasonManual) {
       dados.temporada = anime.seasonManual;
   } else {
-      dados.temporada = anime.season ? `#${traduzirTemporada(anime.season).toLowerCase()}` : "#indefinida";
+      dados.temporada = anime.season ? `#${traduzirTemporada(anime.season).toLowerCase()}` : "??";
   }
   
   dados.estudio = (anime.studios && anime.studios.nodes.length > 0) 
-    ? `#${anime.studios.nodes[0].name.replace(/\s+/g, '')}` : "#Desconhecido";
+    ? `#${anime.studios.nodes[0].name.replace(/\s+/g, '')}` : "??";
     
-  const rawRating = anime.classificacaoManual || "Indefinida";
+  const rawRating = anime.classificacaoManual || null;
+  // A função formatarClassificacaoTxt no utils já foi ajustada ou retornará "??" se nulo
   dados.classificacao = formatarClassificacaoTxt(rawRating);
 
-  dados.tipo = anime.typeManual || (anime.format ? `#${anime.format}` : "#TV");
+  dados.tipo = anime.typeManual || (anime.format ? `#${anime.format}` : "??");
   
   // Status
   if (anime.statusManual) dados.status = anime.statusManual;
   else {
-      let st = "Indefinido";
+      let st = "??";
       if (anime.status === 'FINISHED') st = "Completo";
       if (anime.status === 'RELEASING') st = "Em Lançamento";
       if (anime.status === 'NOT_YET_RELEASED') st = "Não Lançado";
@@ -77,43 +74,45 @@ function formatarPost(anime) {
   
   // 4. Temporada e Links
   const num = anime.seasonNum || "1ª Temporada";
-  // Link no formato Markdown: [Texto](URL)
   if (anime.seasonUrl) {
       dados.linkTemporada = `[${num}](${anime.seasonUrl})`;
   } else {
       dados.linkTemporada = num;
   }
-  dados.episodios = anime.episodes || "?";
+  dados.episodios = anime.episodes || "??";
 
-  // Linhas Condicionais: Parte e Nome Temp
-  if (anime.partNum) {
-      dados.linhaParte = `🔗 | Parte ${anime.partNum}`;
-  } else {
-      dados.linhaParte = "";
-  }
-  
-  if (anime.seasonName) {
-      dados.linhaNomeTemp = `🧩 | ${anime.seasonName}`;
-  } else {
-      dados.linhaNomeTemp = "";
-  }
+  // Linhas Condicionais
+  dados.linhaParte = anime.partNum ? `🔗 | Parte ${anime.partNum}` : "";
+  dados.linhaNomeTemp = anime.seasonName ? `🧩 | ${anime.seasonName}` : "";
   
   // 5. Sinopse
-  let sin = anime.description || "Sinopse indisponível.";
+  let sin = anime.description || "??";
   sin = sin.replace(/<br>/g, "\n").replace(/<i>/g, "").replace(/<\/i>/g, "");
   dados.sinopse = sin;
 
-  // 6. Substituição no Template
+  // 6. Substituição Segura no Template
   let textoFinal = POST_TEMPLATE;
-  for (const [chave, valor] of Object.entries(dados)) {
-      // Remove a linha inteira do template se o valor for vazio (para as linhas condicionais)
-      if (valor === "") {
-          // Regex para remover a linha que contém {{chave}} vazia e a quebra de linha seguinte
+
+  // Lista de variáveis que devem DELETAR a linha se estiverem vazias
+  const variaveisQueApagamLinha = ['linhaAbrev', 'linhaParte', 'linhaNomeTemp'];
+
+  // Primeiro processa quem apaga linha
+  for (const chave of variaveisQueApagamLinha) {
+      const valor = dados[chave];
+      if (!valor || valor === "") {
+          // Remove a linha inteira onde essa variável está
           const regex = new RegExp(`^.*{{${chave}}}.*(\\r\\n|\\n|\\r)?`, "gm");
           textoFinal = textoFinal.replace(regex, "");
       } else {
-          textoFinal = textoFinal.split(`{{${chave}}}`).join(valor);
+          // Substitui normalmente
+          textoFinal = textoFinal.replace(`{{${chave}}}`, valor);
       }
+  }
+
+  // Depois processa o resto (inline) sem apagar linhas
+  for (const [chave, valor] of Object.entries(dados)) {
+      if (variaveisQueApagamLinha.includes(chave)) continue; // Já foi
+      textoFinal = textoFinal.split(`{{${chave}}}`).join(valor);
   }
   
   return textoFinal.trim();
