@@ -1,68 +1,48 @@
 // ARQUIVO: src/events/editors.js
-// ATUALIZADO (v1.5.0 - Roadmap Etapa 1: Mostrar valor atual ao editar)
+// ATUALIZADO (v1.5.0 - Botão de Cancelar/Voltar na edição)
 
+const { Markup } = require('telegraf'); // <--- Importação necessária para o botão
 const { enviarMenuClassificacao } = require('../menus/index.js');
 const { lerPasscode } = require('../passcode.js');
 const { irParaMenuEdicao } = require('./common.js');
 
 module.exports = (bot, checkPermission) => {
 
-  // --- LISTA DE BOTÕES DE EDIÇÃO (Texto e Imagem) ---
+  // --- LISTA DE BOTÕES DE EDIÇÃO ---
   const botoesEdicao = [
-      // Capa (Campos Clássicos)
+      // Capa
       'edit_title', 'edit_studio', 'edit_tags', 'edit_poster', 'edit_fundo', 'edit_info',
-      // Post (Campos Específicos)
+      // Post
       'edit_abrev', 'edit_audio', 'edit_synopsis', 
       'edit_season_num', 'edit_episodes', 'edit_part_num', 'edit_season_name',
-      // Novos Campos Manuais (v1.4.5+)
+      // Novos Manuais
       'edit_alt_name', 'edit_year', 'edit_season', 'edit_type', 'edit_status',
       'edit_season_url'
   ];
 
-  // --- HANDLER DOS BOTÕES (AGORA MOSTRA O VALOR ATUAL) ---
+  // --- HANDLER: QUANDO CLICA PARA EDITAR UM CAMPO ---
   bot.action(botoesEdicao, checkPermission, async (ctx) => {
     if (!ctx.session || ctx.session.state !== 'main_edit') return ctx.answerCbQuery();
     
     const acao = ctx.match[0];
-    const dados = ctx.session.animeData; // Pega os dados salvos na sessão
+    const dados = ctx.session.animeData;
     
     ctx.session.state = 'awaiting_input'; 
     ctx.session.awaitingInput = acao; 
     
-    // 1. Lógica para descobrir qual valor mostrar baseado no botão clicado
+    // 1. Descobre o valor atual
     let valorAtual = "Vazio / Não definido";
     let nomeCampo = "Valor";
 
-    // --- Mapeamento Inteligente ---
-    // Identificação
-    if(acao === 'edit_title') {
-        nomeCampo = "Título Principal";
-        valorAtual = dados.title.romaji;
-    }
-    else if(acao === 'edit_alt_name') {
-        nomeCampo = "Nome Alternativo";
-        valorAtual = dados.title.english;
-    }
-    else if(acao === 'edit_info') {
-        nomeCampo = "Info (Topo)";
-        valorAtual = dados.infoManual;
-    }
-    else if(acao === 'edit_abrev') {
-        nomeCampo = "Abreviação";
-        valorAtual = dados.abrev;
-    }
+    // --- Mapeamento de Campos ---
+    if(acao === 'edit_title') { nomeCampo = "Título Principal"; valorAtual = dados.title.romaji; }
+    else if(acao === 'edit_alt_name') { nomeCampo = "Nome Alternativo"; valorAtual = dados.title.english; }
+    else if(acao === 'edit_info') { nomeCampo = "Info (Topo)"; valorAtual = dados.infoManual; }
+    else if(acao === 'edit_abrev') { nomeCampo = "Abreviação"; valorAtual = dados.abrev; }
     
-    // Padrões (Estúdio e Tags precisam de tratamento especial pois são objetos/arrays)
-    else if(acao === 'edit_studio') {
-        nomeCampo = "Estúdio";
-        valorAtual = (dados.studios && dados.studios.nodes[0]) ? dados.studios.nodes[0].name : null;
-    }
-    else if(acao === 'edit_tags') {
-        nomeCampo = "Tags";
-        valorAtual = (dados.genres) ? dados.genres.join(', ') : null;
-    }
+    else if(acao === 'edit_studio') { nomeCampo = "Estúdio"; valorAtual = (dados.studios && dados.studios.nodes[0]) ? dados.studios.nodes[0].name : null; }
+    else if(acao === 'edit_tags') { nomeCampo = "Tags"; valorAtual = (dados.genres) ? dados.genres.join(', ') : null; }
     
-    // Dados Técnicos
     else if(acao === 'edit_year') { nomeCampo = "Ano"; valorAtual = dados.yearManual; }
     else if(acao === 'edit_season') { nomeCampo = "Temporada (Texto)"; valorAtual = dados.seasonManual; }
     else if(acao === 'edit_season_url') { nomeCampo = "Link da Temporada"; valorAtual = dados.seasonUrl; }
@@ -70,21 +50,18 @@ module.exports = (bot, checkPermission) => {
     else if(acao === 'edit_status') { nomeCampo = "Status"; valorAtual = dados.statusManual; }
     else if(acao === 'edit_audio') { nomeCampo = "Áudio"; valorAtual = dados.audio; }
     
-    // Dados da Obra
     else if(acao === 'edit_season_num') { nomeCampo = "Nº Temporada"; valorAtual = dados.seasonNum; }
     else if(acao === 'edit_episodes') { nomeCampo = "Qtd Episódios"; valorAtual = dados.episodes; }
     else if(acao === 'edit_part_num') { nomeCampo = "Nº Parte"; valorAtual = dados.partNum; }
     else if(acao === 'edit_season_name') { nomeCampo = "Nome da Temporada"; valorAtual = dados.seasonName; }
     else if(acao === 'edit_synopsis') { nomeCampo = "Sinopse"; valorAtual = dados.description; }
 
-    // Imagens (Mostra a URL)
     else if(acao === 'edit_poster') { nomeCampo = "URL do Pôster"; valorAtual = dados.coverImage?.large; }
     else if(acao === 'edit_fundo') { nomeCampo = "URL do Banner"; valorAtual = dados.bannerImage; }
 
-    // Tratamento estético para nulos
     if (!valorAtual) valorAtual = "_(Vazio)_";
 
-    // 2. Monta a mensagem visual
+    // 2. Monta a mensagem
     const mensagem = `
 ✏️ **Editando: ${nomeCampo}**
 
@@ -92,15 +69,31 @@ Valor Atual:
 \`${valorAtual}\`
 
 👇 **Digite o novo valor abaixo:**
-_(Ou envie /cancelar para não alterar)_
 `;
 
-    // Se for Sinopse (texto grande), enviamos sem bloco de código para facilitar a leitura
+    // 3. Cria o botão de Cancelar/Voltar
+    const teclado = Markup.inlineKeyboard([
+        [Markup.button.callback('🔙 Cancelar / Voltar', 'cancel_input')]
+    ]);
+
+    // Envia a pergunta com o botão
     if (acao === 'edit_synopsis') {
-         await ctx.reply(`✏️ **Editando Sinopse**\n\n**Atual:**\n${valorAtual}\n\n👇 Digite a nova sinopse:`, { parse_mode: 'Markdown' });
+         await ctx.reply(`✏️ **Editando Sinopse**\n\n**Atual:**\n${valorAtual}\n\n👇 Digite a nova sinopse:`, { parse_mode: 'Markdown', ...teclado });
     } else {
-         await ctx.reply(mensagem, { parse_mode: 'Markdown' });
+         await ctx.reply(mensagem, { parse_mode: 'Markdown', ...teclado });
     }
+  });
+
+  // --- NOVO HANDLER: BOTÃO CANCELAR ---
+  bot.action('cancel_input', checkPermission, async (ctx) => {
+      // Limpa o estado de espera
+      ctx.session.state = 'main_edit';
+      ctx.session.awaitingInput = null;
+      
+      try { await ctx.deleteMessage(); } catch(e) {} // Apaga a pergunta
+      
+      // Volta para o menu principal
+      await irParaMenuEdicao(ctx);
   });
 
   // --- BOTÃO DE RATING ---
@@ -113,7 +106,7 @@ _(Ou envie /cancelar para não alterar)_
   bot.on('text', checkPermission, async (ctx) => {
     if (ctx.message.text.startsWith('/')) return;
     
-    // Comando de cancelar edição
+    // (Opcional) Mantém o comando /cancelar como fallback oculto
     if (ctx.session.state === 'awaiting_input' && ctx.message.text.trim().toLowerCase() === '/cancelar') {
         ctx.session.state = 'main_edit';
         ctx.session.awaitingInput = null;
@@ -121,10 +114,9 @@ _(Ou envie /cancelar para não alterar)_
         return await irParaMenuEdicao(ctx);
     }
 
-    // 1. RESTAURAR PASSCODE (Mantendo a limpeza do v1.4.9)
+    // 1. RESTAURAR PASSCODE
     if (ctx.session.state === 'awaiting_passcode') {
         const codigoRaw = ctx.message.text;
-        // Limpeza de caracteres invisíveis/quebras de linha do Telegram
         const codigo = codigoRaw.replace(/[^a-zA-Z0-9\-_]/g, '');
         
         const dados = lerPasscode(codigo);
@@ -140,7 +132,7 @@ _(Ou envie /cancelar para não alterar)_
              ctx.session.isPostMode = false;
              await ctx.reply('✅ Dados de **CAPA** restaurados.');
         } else {
-             // Fallback para códigos antigos
+             // Fallback
              if (dados.description || dados.abrev) {
                  ctx.session.isPostMode = true;
                  await ctx.reply('⚠️ Passcode antigo: Detectado como **POST**.');
@@ -152,13 +144,13 @@ _(Ou envie /cancelar para não alterar)_
         return await irParaMenuEdicao(ctx);
     }
 
-    // 2. EDIÇÃO DE CAMPOS (Salvar o novo valor)
+    // 2. SALVAR NOVO VALOR
     if (ctx.session.state !== 'awaiting_input' || !ctx.session.animeData) return;
     const state = ctx.session.awaitingInput;
     const anime = ctx.session.animeData;
     const input = ctx.message.text.trim();
 
-    // Mapeamento Geral
+    // Mapeamento
     if (state === 'edit_title') anime.title.romaji = input;
     if (state === 'edit_info') anime.infoManual = input;
     if (state === 'edit_studio') anime.studios.nodes = [{ name: input }];
@@ -194,11 +186,15 @@ _(Ou envie /cancelar para não alterar)_
     await irParaMenuEdicao(ctx);
   });
 
-  // FOTOS (Mantido igual)
+  // FOTOS
   bot.on('photo', checkPermission, async (ctx) => {
       if (ctx.session.state !== 'awaiting_input') return;
+      
+      // Adicionamos o "cancelar" aqui caso a pessoa mande foto mas esteja editando texto (previne bugs)
       const state = ctx.session.awaitingInput;
-      if (state !== 'edit_poster' && state !== 'edit_fundo') return;
+      if (state !== 'edit_poster' && state !== 'edit_fundo') {
+         return ctx.reply('⚠️ Por favor, envie texto para esse campo ou clique em Cancelar.');
+      }
       
       const fileLink = await ctx.telegram.getFileLink(ctx.message.photo.pop().file_id);
       const url = fileLink.href;
