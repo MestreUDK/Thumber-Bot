@@ -14,37 +14,32 @@ function traduzirTemporada(season) {
 function getRatingImageName(apiRating) {
   if (!apiRating) return null;
   const rating = String(apiRating).toUpperCase();
-  
   if (rating === 'G' || rating === 'ALL') return 'L.png';
-  if (rating === 'PG') return 'A12.png'; // Ajuste fino
-  if (rating === 'PG-13') return 'A14.png'; // ou A14
+  if (rating === 'PG') return 'A12.png';
+  if (rating === 'PG-13') return 'A14.png';
   if (rating === 'R+' || rating === 'R-17' || rating === 'R') return 'A16.png';
   if (rating === 'NC-17' || rating === 'RX') return 'A18.png';
-  
-  // Se já vier numero (modo manual)
   if (['10','12','14','16','18'].includes(rating)) return `A${rating}.png`;
   if (rating === 'L') return 'L.png';
-  
   return null;
 }
 
 // --- Formatação de Texto Híbrida ---
 function formatarClassificacaoTxt(apiRating) {
-  if (!apiRating) return "Indefinida";
+  if (!apiRating) return "??"; // <--- MUDANÇA: Retorna ?? se nulo
+  
   const rating = String(apiRating).toUpperCase();
   
   // 1. Dicionário Reverso (Nacional -> Internacional)
-  // Usado quando a origem é MANUAL (o usuário escolheu A14)
   const mapReverso = {
       'L': 'G',
       '10': 'PG',
       '12': 'PG-13',
-      '14': 'PG-13', // ou TV-14
+      '14': 'PG-13',
       '16': 'R-17 / R+',
       '18': 'Rx / NC-17'
   };
 
-  // Se o input for um dos manuais (10, 12, 14...), retornamos o formato híbrido
   if (['L', '10', '12', '14', '16', '18'].includes(rating)) {
       const internacional = mapReverso[rating] || '??';
       const nacional = rating === 'L' ? 'L' : `A${rating}`;
@@ -52,14 +47,13 @@ function formatarClassificacaoTxt(apiRating) {
   }
 
   // 2. Mapeamento Padrão (Internacional -> Nacional)
-  // Usado quando a origem é ANILIST (vem PG-13)
-  let nacional = "Indefinida";
+  let nacional = "??"; // Default
   if (rating === 'G' || rating === 'ALL') nacional = 'L';
   else if (rating === 'PG') nacional = 'A12';
   else if (rating === 'PG-13') nacional = 'A14';
   else if (rating === 'R+' || rating === 'R-17' || rating === 'R') nacional = 'A16';
   else if (rating === 'NC-17' || rating === 'RX') nacional = 'A18';
-  else nacional = rating; 
+  else nacional = rating;
 
   if (rating === nacional.replace('A','')) return `#${nacional}`;
   return `#${nacional} (${rating})`;

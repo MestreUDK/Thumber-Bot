@@ -1,20 +1,20 @@
-⁣⛩️ | *{{titulo}}* {{alternativo}}
-🏮 | {{abrev}}
+⛩️ | *{{titulo}}*{{alternativo}}
+{{linhaAbrev}}
 👑 | @AnimesUDK
 
 🎭 | Tags | {{tags}}
 🎧 | Áudio | {{audio}}
 🗓️ | Ano | {{ano}}
-💈 | Temporada | {{temporada}}
+📖 | Origem | {{origem}}
 
 🎥 | Estúdio | {{estudio}}
 🚥 | Etária | {{classificacao}}
 📺 | Tipo | {{tipo}}
 🆙 | Status | {{status}}
 
-📌 | Temporada {{numTemporada}} | {{episodios}} Episódios 
-🔗 | Parte {{parte}}
-🧩 | {{nomeTemporada}}
+📌 | {{linkTemporada}} | {{episodios}} Episódios
+{{linhaParte}}
+{{linhaNomeTemp}}
 
 ℹ️ | Sinopse
 > _{{sinopse}}_

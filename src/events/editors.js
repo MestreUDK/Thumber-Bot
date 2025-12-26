@@ -1,64 +1,106 @@
 // ARQUIVO: src/events/editors.js
+// ATUALIZADO (v1.5.0 - Botão Cancelar + Novo Campo Origem)
 
+const { Markup } = require('telegraf'); // <--- Importação necessária para o botão
 const { enviarMenuClassificacao } = require('../menus/index.js');
 const { lerPasscode } = require('../passcode.js');
 const { irParaMenuEdicao } = require('./common.js');
 
 module.exports = (bot, checkPermission) => {
 
-  // --- LISTA DE BOTÕES DE EDIÇÃO (Texto e Imagem) ---
+  // --- LISTA DE BOTÕES DE EDIÇÃO ---
   const botoesEdicao = [
-      // Capa (Campos Clássicos)
+      // Capa
       'edit_title', 'edit_studio', 'edit_tags', 'edit_poster', 'edit_fundo', 'edit_info',
-      // Post (Campos Específicos)
+      // Post
       'edit_abrev', 'edit_audio', 'edit_synopsis', 
       'edit_season_num', 'edit_episodes', 'edit_part_num', 'edit_season_name',
-      // Novos Campos Manuais (v1.4.5+)
+      // Novos Manuais
       'edit_alt_name', 'edit_year', 'edit_season', 'edit_type', 'edit_status',
-      'edit_season_url' // <-- O Novo botão de Link
+      'edit_season_url',
+      'edit_origem' // <--- NOVO (v1.5)
   ];
 
-  // --- HANDLER DOS BOTÕES ---
+  // --- HANDLER: QUANDO CLICA PARA EDITAR UM CAMPO ---
   bot.action(botoesEdicao, checkPermission, async (ctx) => {
     if (!ctx.session || ctx.session.state !== 'main_edit') return ctx.answerCbQuery();
+
     const acao = ctx.match[0];
+    const dados = ctx.session.animeData;
+
     ctx.session.state = 'awaiting_input'; 
     ctx.session.awaitingInput = acao; 
-    
-    let pergunta = 'Digite o novo valor:';
-    
-    // --- Perguntas Personalizadas ---
-    
+
+    // 1. Descobre o valor atual
+    let valorAtual = "Vazio / Não definido";
+    let nomeCampo = "Valor";
+
+    // --- Mapeamento de Campos ---
     // Identificação
-    if(acao === 'edit_title') pergunta = 'Digite o novo **Título**:';
-    if(acao === 'edit_alt_name') pergunta = 'Digite o **Nome Alternativo** (Ex: Attack on Titan):';
-    if(acao === 'edit_info') pergunta = 'Digite a nova **Info** (Topo):';
-    if(acao === 'edit_abrev') pergunta = 'Digite a **Abreviação** (Ex: #Fumetsu):';
-    
-    // Dados Técnicos
-    if(acao === 'edit_year') pergunta = 'Digite o **Ano** (Ex: 2024 ou 2023 à 2024):';
-    if(acao === 'edit_season') pergunta = 'Digite a **Temporada** (Texto Visual, ex: Outono 2024):';
-    if(acao === 'edit_season_url') pergunta = 'Envie o **Link (URL)** para a Temporada (Ex: https://t.me/...):';
-    if(acao === 'edit_type') pergunta = 'Digite o **Tipo** (Ex: #TV ou #Filme):';
-    if(acao === 'edit_status') pergunta = 'Digite o **Status** (Ex: Completo):';
-    if(acao === 'edit_audio') pergunta = 'Digite o **Áudio** (Ex: #legendado | #dublado):';
-    
-    // Dados da Obra
-    if(acao === 'edit_season_num') pergunta = 'Digite o **Número da Temporada** (Ex: 2):';
-    if(acao === 'edit_episodes') pergunta = 'Digite a **Quantidade de Episódios**:';
-    if(acao === 'edit_part_num') pergunta = 'Digite o **Número da Parte** (Ex: 1):';
-    if(acao === 'edit_season_name') pergunta = 'Digite o **Nome da Temporada** (Ex: Arc de Shibuya):';
-    if(acao === 'edit_synopsis') pergunta = 'Digite a **Sinopse**:';
+    if(acao === 'edit_title') { nomeCampo = "Título Principal"; valorAtual = dados.title.romaji; }
+    else if(acao === 'edit_alt_name') { nomeCampo = "Nome Alternativo"; valorAtual = dados.title.english; }
+    else if(acao === 'edit_info') { nomeCampo = "Info (Topo)"; valorAtual = dados.infoManual; }
+    else if(acao === 'edit_abrev') { nomeCampo = "Abreviação"; valorAtual = dados.abrev; }
 
     // Padrões
-    if(acao === 'edit_studio') pergunta = 'Digite o novo **Estúdio**:';
-    if(acao === 'edit_tags') pergunta = 'Digite as **Tags** (separadas por vírgula):';
+    else if(acao === 'edit_studio') { nomeCampo = "Estúdio"; valorAtual = (dados.studios && dados.studios.nodes[0]) ? dados.studios.nodes[0].name : null; }
+    else if(acao === 'edit_tags') { nomeCampo = "Tags"; valorAtual = (dados.genres) ? dados.genres.join(', ') : null; }
+
+    // Dados Técnicos (Com Origem)
+    else if(acao === 'edit_year') { nomeCampo = "Ano"; valorAtual = dados.yearManual; }
+    else if(acao === 'edit_origem') { nomeCampo = "Origem (Mangá, Novel...)"; valorAtual = dados.origem; } // <--- NOVO
+    else if(acao === 'edit_season') { nomeCampo = "Temporada (Texto)"; valorAtual = dados.seasonManual; }
+    else if(acao === 'edit_season_url') { nomeCampo = "Link da Temporada"; valorAtual = dados.seasonUrl; }
+    else if(acao === 'edit_type') { nomeCampo = "Tipo"; valorAtual = dados.typeManual; }
+    else if(acao === 'edit_status') { nomeCampo = "Status"; valorAtual = dados.statusManual; }
+    else if(acao === 'edit_audio') { nomeCampo = "Áudio"; valorAtual = dados.audio; }
+
+    // Dados da Obra
+    else if(acao === 'edit_season_num') { nomeCampo = "Nº Temporada"; valorAtual = dados.seasonNum; }
+    else if(acao === 'edit_episodes') { nomeCampo = "Qtd Episódios"; valorAtual = dados.episodes; }
+    else if(acao === 'edit_part_num') { nomeCampo = "Nº Parte"; valorAtual = dados.partNum; }
+    else if(acao === 'edit_season_name') { nomeCampo = "Nome da Temporada"; valorAtual = dados.seasonName; }
+    else if(acao === 'edit_synopsis') { nomeCampo = "Sinopse"; valorAtual = dados.description; }
 
     // Imagens
-    if(acao === 'edit_poster') pergunta = 'Envie a imagem ou link do **Pôster**:';
-    if(acao === 'edit_fundo') pergunta = 'Envie a imagem ou link do **Fundo**:';
+    else if(acao === 'edit_poster') { nomeCampo = "URL do Pôster"; valorAtual = dados.coverImage?.large; }
+    else if(acao === 'edit_fundo') { nomeCampo = "URL do Banner"; valorAtual = dados.bannerImage; }
 
-    await ctx.reply(pergunta, { parse_mode: 'Markdown' });
+    if (!valorAtual) valorAtual = "_(Vazio)_";
+
+    // 2. Monta a mensagem
+    const mensagem = `
+✏️ **Editando: ${nomeCampo}**
+
+Valor Atual:
+\`${valorAtual}\`
+
+👇 **Digite o novo valor abaixo:**
+`;
+
+    // 3. Cria o botão de Cancelar/Voltar
+    const teclado = Markup.inlineKeyboard([
+        [Markup.button.callback('🔙 Cancelar / Voltar', 'cancel_input')]
+    ]);
+
+    // Envia a pergunta com o botão
+    if (acao === 'edit_synopsis') {
+         await ctx.reply(`✏️ **Editando Sinopse**\n\n**Atual:**\n${valorAtual}\n\n👇 Digite a nova sinopse:`, { parse_mode: 'Markdown', ...teclado });
+    } else {
+         await ctx.reply(mensagem, { parse_mode: 'Markdown', ...teclado });
+    }
+  });
+
+  // --- HANDLER: BOTÃO CANCELAR ---
+  bot.action('cancel_input', checkPermission, async (ctx) => {
+      // Limpa o estado de espera
+      ctx.session.state = 'main_edit';
+      ctx.session.awaitingInput = null;
+
+      try { await ctx.deleteMessage(); } catch(e) {} // Apaga a pergunta
+
+      // Volta para o menu principal
+      await irParaMenuEdicao(ctx);
   });
 
   // --- BOTÃO DE RATING ---
@@ -71,24 +113,33 @@ module.exports = (bot, checkPermission) => {
   bot.on('text', checkPermission, async (ctx) => {
     if (ctx.message.text.startsWith('/')) return;
 
+    // (Opcional) Mantém o comando /cancelar como fallback
+    if (ctx.session.state === 'awaiting_input' && ctx.message.text.trim().toLowerCase() === '/cancelar') {
+        ctx.session.state = 'main_edit';
+        ctx.session.awaitingInput = null;
+        await ctx.reply('Operação cancelada.');
+        return await irParaMenuEdicao(ctx);
+    }
+
     // 1. RESTAURAR PASSCODE
     if (ctx.session.state === 'awaiting_passcode') {
-        const codigo = ctx.message.text.trim();
+        const codigoRaw = ctx.message.text;
+        const codigo = codigoRaw.replace(/[^a-zA-Z0-9\-_]/g, '');
+
         const dados = lerPasscode(codigo);
-        if (!dados) return ctx.reply('❌ Código inválido.');
-        
+        if (!dados) return ctx.reply('❌ Código inválido ou corrompido.');
+
         ctx.session.animeData = dados;
         ctx.session.state = 'main_edit';
-        
-        // Detecção de modo (Post vs Capa)
+
         if (dados.mode === 'p') {
              ctx.session.isPostMode = true;
-             await ctx.reply('✅ Dados de **POST** identificados e restaurados.');
+             await ctx.reply('✅ Dados de **POST** restaurados.');
         } else if (dados.mode === 'c') {
              ctx.session.isPostMode = false;
-             await ctx.reply('✅ Dados de **CAPA** identificados e restaurados.');
+             await ctx.reply('✅ Dados de **CAPA** restaurados.');
         } else {
-             // Fallback para códigos antigos
+             // Fallback
              if (dados.description || dados.abrev) {
                  ctx.session.isPostMode = true;
                  await ctx.reply('⚠️ Passcode antigo: Detectado como **POST**.');
@@ -100,19 +151,19 @@ module.exports = (bot, checkPermission) => {
         return await irParaMenuEdicao(ctx);
     }
 
-    // 2. EDIÇÃO DE CAMPOS
+    // 2. SALVAR NOVO VALOR
     if (ctx.session.state !== 'awaiting_input' || !ctx.session.animeData) return;
     const state = ctx.session.awaitingInput;
     const anime = ctx.session.animeData;
     const input = ctx.message.text.trim();
 
-    // --- Mapeamento Geral ---
+    // Mapeamento
     if (state === 'edit_title') anime.title.romaji = input;
     if (state === 'edit_info') anime.infoManual = input;
     if (state === 'edit_studio') anime.studios.nodes = [{ name: input }];
     if (state === 'edit_tags') anime.genres = input.split(',').map(t => t.trim());
-    
-    // --- Campos Específicos do Post ---
+
+    // Post
     if (state === 'edit_abrev') anime.abrev = input;
     if (state === 'edit_audio') anime.audio = input;
     if (state === 'edit_synopsis') anime.description = input;
@@ -121,15 +172,16 @@ module.exports = (bot, checkPermission) => {
     if (state === 'edit_part_num') anime.partNum = input;
     if (state === 'edit_season_name') anime.seasonName = input;
 
-    // --- Novos Campos Manuais ---
+    // Manuais e Link
     if (state === 'edit_alt_name') anime.title.english = input;
     if (state === 'edit_year') anime.yearManual = input;
+    if (state === 'edit_origem') anime.origem = input; // <--- SALVA A ORIGEM
     if (state === 'edit_type') anime.typeManual = input;
     if (state === 'edit_status') anime.statusManual = input;
-    if (state === 'edit_season') anime.seasonManual = input; // Texto da temporada
-    if (state === 'edit_season_url') anime.seasonUrl = input; // Link da temporada
+    if (state === 'edit_season') anime.seasonManual = input;
+    if (state === 'edit_season_url') anime.seasonUrl = input;
 
-    // --- Imagens via Link ---
+    // Imagens
     if (state === 'edit_poster') {
         if (!anime.coverImage) anime.coverImage = {};
         anime.coverImage.large = input;
@@ -142,21 +194,24 @@ module.exports = (bot, checkPermission) => {
     await irParaMenuEdicao(ctx);
   });
 
-  // --- RECEBIMENTO DE FOTOS (UPLOAD) ---
+  // FOTOS
   bot.on('photo', checkPermission, async (ctx) => {
       if (ctx.session.state !== 'awaiting_input') return;
+
       const state = ctx.session.awaitingInput;
-      if (state !== 'edit_poster' && state !== 'edit_fundo') return;
-      
+      if (state !== 'edit_poster' && state !== 'edit_fundo') {
+         return ctx.reply('⚠️ Por favor, envie texto para esse campo ou clique em Cancelar.');
+      }
+
       const fileLink = await ctx.telegram.getFileLink(ctx.message.photo.pop().file_id);
       const url = fileLink.href;
-      
+
       if (state === 'edit_poster') {
           if (!ctx.session.animeData.coverImage) ctx.session.animeData.coverImage = {};
           ctx.session.animeData.coverImage.large = url;
       }
       if (state === 'edit_fundo') ctx.session.animeData.bannerImage = url;
-      
+
       ctx.session.state = 'main_edit';
       ctx.session.awaitingInput = null;
       await ctx.reply('✅ Imagem recebida!');
