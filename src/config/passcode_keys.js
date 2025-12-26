@@ -4,20 +4,26 @@ const KEY_MAP = {
   // Controle
   'mode': 'm', 
 
-  // Campos Básicos
+  // Campos Básicos (AniList)
   'title': 't', 'romaji': 'r', 'english': 'e',
   'season': 's', 'seasonYear': 'y', 'episodes': 'ep',
   'studios': 'st', 'nodes': 'n', 'name': 'nm',
   'genres': 'g', 'averageScore': 'sc', 'format': 'fmt',
   'coverImage': 'ci', 'large': 'l', 'bannerImage': 'bi',
-  'classificacaoManual': 'cm', 'infoManual': 'im', 'layout': 'la',
   
+  // Datas (AniList) - ADICIONADO PARA OTIMIZAR O QUERY NOVO
+  'startDate': 'sd', 'endDate': 'ed',
+  'year': 'yr', 'month': 'mo', 'day': 'da',
+
+  // Campos Manuais e Edição
+  'classificacaoManual': 'cm', 'infoManual': 'im', 'layout': 'la',
+
   // Campos do Post
   'description': 'desc', 'abrev': 'abr', 'audio': 'aud',
   'seasonNum': 'sn', 'partNum': 'pn', 'seasonName': 'snm',
-  
+
   // Novos Campos (v1.5)
-  'origem': 'org',        // <-- NOVO: Origem (Mangá, Novel...)
+  'origem': 'org',        
   'yearManual': 'ym', 
   'seasonManual': 'sm',
   'typeManual': 'tm', 
