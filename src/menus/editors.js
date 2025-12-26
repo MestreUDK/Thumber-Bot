@@ -75,8 +75,7 @@ Classificação: ${classificacao}
   await ctx.reply(texto, botoes);
 }
 
-// --- *** NOVO: Menu Exclusivo para POST (Texto) *** ---
-// Atualizado com todos os botões de edição solicitados
+// --- *** Menu Exclusivo para POST (Atualizado) *** ---
 async function enviarMenuEdicaoPost(ctx) {
   const data = ctx.session.animeData;
   if (!data) return ctx.reply('Sessão expirada. Use /post novamente.');
@@ -97,14 +96,14 @@ Escolha o campo para alterar:
     [ Markup.button.callback('🏷️ Título', 'edit_title'), Markup.button.callback('🔤 Alt. Nome', 'edit_alt_name') ],
     [ Markup.button.callback('🏮 Abrev.', 'edit_abrev'), Markup.button.callback('🎧 Áudio', 'edit_audio') ],
     
-    // Dados Técnicos (Novos)
-    [ Markup.button.callback('🗓️ Ano', 'edit_year'), Markup.button.callback('💈 Temporada (Txt)', 'edit_season') ],
-    [ Markup.button.callback('📺 Tipo', 'edit_type'), Markup.button.callback('🆙 Status', 'edit_status') ],
+    // Dados Técnicos (Com o novo botão ORIGEM)
+    [ Markup.button.callback('🗓️ Ano', 'edit_year'), Markup.button.callback('📖 Origem', 'edit_origem') ], 
+    [ Markup.button.callback('💈 Temporada (Txt)', 'edit_season'), Markup.button.callback('📺 Tipo', 'edit_type') ],
+    [ Markup.button.callback('🆙 Status', 'edit_status'), Markup.button.callback('🔗 Link Temp.', 'edit_season_url') ],
     
-    // Dados da Obra (Com o Link da Temporada)
-    [ Markup.button.callback('📌 Temp (Nº)', 'edit_season_num'), Markup.button.callback('🔗 Link Temp.', 'edit_season_url') ],
-    [ Markup.button.callback('🔢 Episódios', 'edit_episodes'), Markup.button.callback('🧩 Nome Temp.', 'edit_season_name') ],
-    [ Markup.button.callback('🔗 Parte', 'edit_part_num') ],
+    // Dados da Obra
+    [ Markup.button.callback('📌 Temp (Nº)', 'edit_season_num'), Markup.button.callback('🔢 Episódios', 'edit_episodes') ],
+    [ Markup.button.callback('🔗 Parte', 'edit_part_num'), Markup.button.callback('🧩 Nome Temp.', 'edit_season_name') ],
     
     // Padrões
     [ Markup.button.callback('🎥 Estúdio', 'edit_studio'), Markup.button.callback('🎭 Tags', 'edit_tags') ],
