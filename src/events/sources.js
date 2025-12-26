@@ -36,6 +36,7 @@ module.exports = (bot, checkPermission) => {
           'VIDEO_GAME': 'Game',
           'NOVEL': 'Novel',
           'DOUJINSHI': 'Doujin',
+          'WEB_MANGA': 'Web Mangá',
           'WEB_NOVEL': 'Web Novel'
       };
       // Se a API trouxer a fonte, traduz. Se não, define como 'Outro'.
