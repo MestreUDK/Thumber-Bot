@@ -17,12 +17,22 @@ query ($search: String) {
     format
     status
     description(asHtml: false)
+    
+    # --- NOVOS CAMPOS ADICIONADOS ---
+    source
+    
     startDate {
       year
+      month
+      day
     }
     endDate {
       year
+      month
+      day
     }
+    # -------------------------------
+    
     coverImage {
       large
     }
