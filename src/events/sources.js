@@ -5,7 +5,7 @@ const { enviarMenuLayout, enviarMenuFonteDados } = require('../menus/index.js');
 const { irParaMenuEdicao } = require('./common.js');
 
 module.exports = (bot, checkPermission) => {
-  
+
   // --- ANILIST ---
   bot.action('source_anilist', checkPermission, async (ctx) => {
     try {
@@ -22,10 +22,25 @@ module.exports = (bot, checkPermission) => {
       }
 
       const anime = resultadoApi.data;
-      // Inicializa campos
+      // Inicializa campos extras
       anime.classificacaoManual = null; anime.infoManual = null; 
       anime.abrev = null; anime.audio = null;
       anime.seasonNum = null; anime.partNum = null; anime.seasonName = null;
+
+      // --- TRADUÇÃO AUTOMÁTICA DA ORIGEM (v1.5.0) ---
+      const sourceMap = {
+          'MANGA': 'Mangá',
+          'LIGHT_NOVEL': 'Light Novel',
+          'ORIGINAL': 'Original',
+          'VISUAL_NOVEL': 'Visual Novel',
+          'VIDEO_GAME': 'Game',
+          'NOVEL': 'Novel',
+          'DOUJINSHI': 'Doujin',
+          'WEB_NOVEL': 'Web Novel'
+      };
+      // Se a API trouxer a fonte, traduz. Se não, define como 'Outro'.
+      anime.origem = sourceMap[anime.source] || "Outro";
+      // ----------------------------------------------
 
       const formato = anime.format ? String(anime.format).toUpperCase() : 'TV';
       if (formato === 'MOVIE') anime.layout = 'FILME';
@@ -33,7 +48,7 @@ module.exports = (bot, checkPermission) => {
       else anime.layout = 'TV';
 
       ctx.session.animeData = anime; 
-      
+
       // --- LÓGICA DE NAVEGAÇÃO ---
       if (ctx.session.isPostMode) {
           ctx.session.state = 'main_edit';
@@ -52,6 +67,7 @@ module.exports = (bot, checkPermission) => {
     try {
       if (!ctx.session || ctx.session.state !== 'source_select') return ctx.answerCbQuery('Sessão expirada.');
       const nomeDoAnime = ctx.session.searchTitle || "Anime Sem Título";
+      
       const anime = {
         title: { romaji: nomeDoAnime, english: null },
         season: null, seasonYear: null, episodes: null,
@@ -60,9 +76,11 @@ module.exports = (bot, checkPermission) => {
         startDate: { year: null }, endDate: { year: null },
         coverImage: { large: null }, bannerImage: null,
         classificacaoManual: null, infoManual: null, layout: 'TV',
-        abrev: null, audio: null, seasonNum: null, partNum: null, seasonName: null
+        abrev: null, audio: null, seasonNum: null, partNum: null, seasonName: null,
+        
+        origem: 'Mangá' // <--- Padrão para Manual (v1.5.0)
       };
-      
+
       ctx.session.animeData = anime;
       await ctx.deleteMessage();
 
