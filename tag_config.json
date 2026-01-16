@@ -47,6 +47,10 @@
     "text": "TERROR",
     "color": "tag_vinho.png"
   },
+  "VAMPIRE": {
+    "text": "VAMPIRO",
+    "color": "tag_vinho.png"
+  },
   "SUPERNATURAL": {
     "text": "SOBRENATURAL",
     "color": "tag_vinho.png"
