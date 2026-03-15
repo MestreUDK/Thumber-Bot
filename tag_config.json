@@ -167,6 +167,10 @@
     "text": "MITOLÓGICO",
     "color": "tag_ciano.png"
   },
+  "ANTHROPOMORPHIC": {
+    "text": "ANTROPOMÓRFICO",
+    "color": "tag_ciano.png"
+  },
   "CHILDCARE": {
     "text": "PUERICULTURA",
     "color": "tag_ciano.png"
